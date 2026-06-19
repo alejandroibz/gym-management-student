@@ -1,0 +1,51 @@
+@use '@angular/material' as mat;
+
+html {
+  height: 100%;
+  @include mat.theme((color: (primary: mat.$red-palette, tertiary: mat.$green-palette), typography: Roboto, density: 0));
+}
+
+:root {
+  --student-bg: #f5f5f6;
+  --student-surface: #ffffff;
+  --student-surface-muted: #f1f1f3;
+  --student-text: #171719;
+  --student-muted: #66666d;
+  --student-border: #e2e2e6;
+  --student-accent: #c1121f;
+  --student-accent-soft: #fff0f2;
+}
+
+html,body { height: 100%; margin: 0; }
+body { background: var(--student-bg); color: var(--student-text); font-family: Roboto, Arial, sans-serif; }
+* { box-sizing: border-box; }
+button,input,textarea,select { font: inherit; }
+
+body.student-dark {
+  color-scheme: dark;
+  --student-bg: #101012;
+  --student-surface: #1b1b1e;
+  --student-surface-muted: #252529;
+  --student-text: #f5f5f6;
+  --student-muted: #aaaab1;
+  --student-border: #343439;
+  --student-accent: #ef5350;
+  --student-accent-soft: rgba(239,83,80,.13);
+  background: var(--student-bg);
+}
+
+body.student-dark .mat-mdc-card,
+body.student-dark .mat-mdc-text-field-wrapper,
+body.student-dark .mat-mdc-select-panel,
+body.student-dark .mat-mdc-option,
+body.student-dark .mat-mdc-tab-body-content,
+body.student-dark .mat-mdc-dialog-surface { background: var(--student-surface) !important; color: var(--student-text) !important; }
+body.student-dark .mat-mdc-input-element,
+body.student-dark .mat-mdc-select-value,
+body.student-dark .mat-mdc-option .mdc-list-item__primary-text,
+body.student-dark .mat-mdc-tab .mdc-tab__text-label { color: var(--student-text) !important; }
+body.student-dark .mdc-notched-outline__leading,
+body.student-dark .mdc-notched-outline__notch,
+body.student-dark .mdc-notched-outline__trailing { border-color: var(--student-border) !important; }
+.mat-mdc-snack-bar-container { --mdc-snackbar-container-color: #171719; --mdc-snackbar-supporting-text-color: #fff; }
+.mat-mdc-unelevated-button { min-height: 44px; }

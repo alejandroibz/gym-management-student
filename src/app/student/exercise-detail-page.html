@@ -1,0 +1,40 @@
+<main class="exercise-detail">
+  <a mat-button routerLink="/">
+    <mat-icon>arrow_back</mat-icon>
+    Volver
+  </a>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (feedback()) {
+    <div class="feedback">{{ feedback() }}</div>
+  }
+
+  @if (exercise(); as item) {
+    <mat-card>
+      @if (item.photoUrl) {
+        <img class="cover" [src]="item.photoUrl" alt="">
+      }
+      <div class="content">
+        <span>{{ item.muscleGroup }}</span>
+        <h1>{{ item.name }}</h1>
+        <p>{{ item.description }}</p>
+        @if (item.musclesInvolved) {
+          <small>{{ item.musclesInvolved }}</small>
+        }
+        @if (item.videoUrl) {
+          @if (getYoutubeEmbedUrl(item.videoUrl); as embedUrl) {
+            <iframe class="video-frame" [src]="embedUrl" title="Video del ejercicio" allowfullscreen></iframe>
+          } @else {
+            <a mat-flat-button color="primary" [href]="item.videoUrl" target="_blank" rel="noreferrer">
+              <mat-icon>play_circle</mat-icon>
+              Ver video
+            </a>
+          }
+        }
+      </div>
+    </mat-card>
+  }
+</main>

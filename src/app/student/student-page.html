@@ -1,0 +1,130 @@
+<main class="student-shell">
+  <header class="app-header">
+    <a class="brand" routerLink="/inicio" aria-label="Ir al inicio">
+      <span class="brand-mark">S</span>
+      <span><strong>Simbiosis</strong><small>Mi gimnasio</small></span>
+    </a>
+    <div class="header-actions">
+      <button mat-icon-button type="button" (click)="toggleTheme()" aria-label="Cambiar tema"><mat-icon>{{ isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon></button>
+      <a mat-icon-button routerLink="/inicio" aria-label="Notificaciones"><mat-icon>notifications</mat-icon>@if ((home()?.notifications?.length || 0) > 0) { <span class="notification-dot"></span> }</a>
+      @if (home()?.dashboard?.profile; as profile) { <img class="mini-avatar" [src]="profile.avatarUrl || 'https://placehold.co/80x80?text=' + profile.nombre[0]" alt=""> }
+    </div>
+  </header>
+
+  @if (isLoading()) { <mat-progress-bar class="top-loader" mode="indeterminate" /> }
+
+  <div class="page-content">
+    @if (section() === 'home') {
+      @if (home(); as data) {
+        <section class="welcome-row">
+          <div><span class="eyebrow">Hola, {{ data.dashboard.profile.nombre }}</span><h1>¿Entrenamos?</h1><p>Tenés todo listo para seguir avanzando.</p></div>
+          <div class="level-pill"><mat-icon>bolt</mat-icon><span>Nivel {{ data.dashboard.progress.level }}</span></div>
+        </section>
+
+        @if (data.todayWorkout; as workout) {
+          <section class="today-workout">
+            <div class="today-copy">
+              <span class="overline">HOY TOCA</span>
+              <h2>{{ workout.name }}</h2>
+              <p>{{ workout.description || workout.goal }}</p>
+              <div class="chip-row"><span><mat-icon>fitness_center</mat-icon>{{ workout.exercises.length }} ejercicios</span><span><mat-icon>schedule</mat-icon>{{ workout.exercises.length * 8 }} min aprox.</span></div>
+              <button mat-flat-button type="button" (click)="startWorkout(workout)"><mat-icon>play_arrow</mat-icon>Empezar workout</button>
+            </div>
+            <div class="workout-visual"><mat-icon>exercise</mat-icon></div>
+          </section>
+        } @else {
+          <section class="empty-hero"><mat-icon>event_available</mat-icon><div><h2>Día libre</h2><p>No tenés un workout programado para hoy.</p></div><a mat-stroked-button routerLink="/entrenar">Ver entrenamientos</a></section>
+        }
+
+        <section class="weekly-card">
+          <div class="section-title"><div><span class="eyebrow">ESTA SEMANA</span><h2>{{ data.weeklyCompleted }} de {{ data.weeklyTarget }} entrenamientos</h2></div><strong>{{ data.weeklyTarget ? (data.weeklyCompleted / data.weeklyTarget * 100 | number:'1.0-0') : 0 }}%</strong></div>
+          <mat-progress-bar mode="determinate" [value]="data.weeklyTarget ? data.weeklyCompleted / data.weeklyTarget * 100 : 0" />
+          <p>{{ data.weeklyTarget - data.weeklyCompleted === 1 ? 'Te falta solo un entrenamiento para completar tu semana.' : data.weeklyCompleted >= data.weeklyTarget ? 'Semana completada. Gran trabajo.' : 'Cada entrenamiento cuenta.' }}</p>
+        </section>
+
+        <section class="quick-grid">
+          <button type="button" (click)="manualCheckIn()"><span class="quick-icon red"><mat-icon>how_to_reg</mat-icon></span><span><strong>Asistencia</strong><small>Registrar manual</small></span><mat-icon>chevron_right</mat-icon></button>
+          <button type="button" (click)="actionPanel.set('habit')"><span class="quick-icon green"><mat-icon>self_improvement</mat-icon></span><span><strong>Hábito</strong><small>Sumar constancia</small></span><mat-icon>chevron_right</mat-icon></button>
+          <button type="button" (click)="actionPanel.set('weight')"><span class="quick-icon blue"><mat-icon>monitor_weight</mat-icon></span><span><strong>Peso</strong><small>Actualizar progreso</small></span><mat-icon>chevron_right</mat-icon></button>
+          <button type="button" (click)="actionPanel.set('goal')"><span class="quick-icon amber"><mat-icon>flag</mat-icon></span><span><strong>Objetivo</strong><small>Crear una meta</small></span><mat-icon>chevron_right</mat-icon></button>
+        </section>
+
+        <section class="metric-strip">
+          <article><mat-icon>stars</mat-icon><strong>{{ data.totalPoints }}</strong><span>Puntos</span></article>
+          <article><mat-icon>local_fire_department</mat-icon><strong>{{ data.habitStreakDays }}</strong><span>Días de racha</span></article>
+          <article><mat-icon>fitness_center</mat-icon><strong>{{ data.dashboard.progress.completedWorkouts }}</strong><span>Workouts</span></article>
+        </section>
+
+        @if (data.notifications.length) {
+          <section class="content-section"><div class="section-title"><h2>Para vos</h2><span>{{ data.notifications.length }} avisos</span></div><div class="notice-list">
+            @for (notice of data.notifications; track notice.id) { <button type="button" class="notice" [class.high]="notice.priority === 'High'" (click)="markNotification(notice.id, notice.actionUrl)"><mat-icon>{{ notice.type === 'Membership' ? 'credit_card' : notice.type === 'Workout' ? 'fitness_center' : 'tips_and_updates' }}</mat-icon><span><strong>{{ notice.title }}</strong><small>{{ notice.message }}</small></span><mat-icon>chevron_right</mat-icon></button> }
+          </div></section>
+        }
+
+        <section class="membership-line"><mat-icon>verified</mat-icon><span><strong>{{ data.dashboard.membership?.planNombre || 'Sin membresía activa' }}</strong><small>@if (data.dashboard.membership) { Vigente hasta {{ data.dashboard.membership.fechaFin | date:'dd/MM/yyyy' }} } @else { Consultá en recepción }</small></span><a mat-button routerLink="/perfil">Ver</a></section>
+      }
+    }
+
+    @if (section() === 'training') {
+      <section class="page-heading"><span class="eyebrow">TU ENTRENAMIENTO</span><h1>Entrenar</h1><p>Elegí un workout o ajustá tu agenda semanal.</p></section>
+      @if (training(); as overview) {
+        @for (plan of overview.plans; track plan.id) {
+          <section class="plan-section"><div class="plan-heading"><div><span class="soft-chip">PLAN ACTIVO</span><h2>{{ plan.trainingPlanName }}</h2><p>{{ plan.trainingPlanGoal }} · {{ plan.trainingPlanLevel }}</p></div><span>{{ plan.workoutCount }} workouts</span></div>
+            <div class="workout-grid">@for (workout of plan.workouts; track workout.id) { <article class="workout-card"><div class="workout-card-top"><span class="workout-number">{{ $index + 1 }}</span><button mat-icon-button type="button" (click)="openSchedule(workout)" aria-label="Editar agenda"><mat-icon>edit_calendar</mat-icon></button></div><h3>{{ workout.name }}</h3><p>{{ workout.description || workout.goal }}</p><div class="day-row">@for (day of workout.scheduleDays; track day) { <span>{{ getDayLabel(day) }}</span> }</div><div class="workout-meta"><span>{{ workout.exercises.length }} ejercicios</span><span>{{ workout.completionPercent }}%</span></div><button mat-flat-button type="button" (click)="startWorkout(workout)"><mat-icon>play_arrow</mat-icon>Entrenar</button></article> }</div>
+          </section>
+        } @empty { <section class="empty-state"><mat-icon>assignment</mat-icon><h2>Todavía no tenés un plan</h2><p>Cuando tu entrenador te asigne uno, aparecerá acá.</p></section> }
+        @if (overview.directWorkouts.length) { <section class="plan-section"><div class="plan-heading"><div><span class="eyebrow">ASIGNACIONES DIRECTAS</span><h2>Workouts adicionales</h2></div></div><div class="workout-grid">@for (workout of overview.directWorkouts; track workout.id) { <article class="workout-card compact"><h3>{{ workout.name }}</h3><p>{{ workout.description }}</p><button mat-stroked-button type="button" (click)="startWorkout(workout)">Ver workout</button></article> }</div></section> }
+        <a class="catalog-link" routerLink="/ejercicios"><span class="quick-icon red"><mat-icon>search</mat-icon></span><span><strong>Biblioteca de ejercicios</strong><small>Explorá todos los ejercicios del gimnasio</small></span><mat-icon>arrow_forward</mat-icon></a>
+      }
+    }
+
+    @if (section() === 'progress') {
+      <section class="page-heading"><span class="eyebrow">TU EVOLUCIÓN</span><h1>Progreso</h1><p>Datos simples para entender cuánto avanzaste.</p></section>
+      <div class="period-switch" role="group" aria-label="Periodo de progreso"><button type="button" [class.active]="progressPeriod() === 'week'" (click)="setProgressPeriod('week')">7 dias</button><button type="button" [class.active]="progressPeriod() === 'month'" (click)="setProgressPeriod('month')">30 dias</button><button type="button" [class.active]="progressPeriod() === 'quarter'" (click)="setProgressPeriod('quarter')">3 meses</button></div>
+      @if (progress(); as data) {
+        <section class="progress-metrics"><article><mat-icon>monitor_weight</mat-icon><strong>{{ data.currentWeightKg || '-' }}<small>kg</small></strong><span>Peso actual</span><em [class.negative]="(data.weightDeltaKg || 0) < 0">{{ (data.weightDeltaKg || 0) > 0 ? '+' : '' }}{{ data.weightDeltaKg || 0 }} kg</em></article><article><mat-icon>how_to_reg</mat-icon><strong>{{ data.attendanceCount }}</strong><span>Asistencias</span></article><article><mat-icon>fitness_center</mat-icon><strong>{{ data.workoutCount }}</strong><span>Workouts</span></article><article><mat-icon>equalizer</mat-icon><strong>{{ data.totalVolume | number:'1.0-0' }}</strong><span>Volumen kg</span></article></section>
+
+        <section class="progress-layout"><article class="data-panel"><div class="section-title"><h2>Peso corporal</h2><button mat-stroked-button type="button" (click)="actionPanel.set('weight')">Registrar</button></div><div class="bar-chart">@for (item of data.bodyMeasurements.slice(0, 8).reverse(); track item.id) { <div><span [style.height.%]="item.weightKg / 2"></span><small>{{ item.measuredAt | date:'dd/MM' }}</small></div> } @empty { <p>Registrá tu peso para empezar a ver la evolución.</p> }</div></article>
+          <article class="data-panel"><div class="section-title"><h2>Músculos más entrenados</h2></div>@for (muscle of data.mostTrainedMuscles; track muscle.name) { <div class="muscle-line"><span>{{ muscle.name }}</span><mat-progress-bar mode="determinate" [value]="muscle.value / (data.mostTrainedMuscles[0].value || 1) * 100" /><strong>{{ muscle.value }}</strong></div> } @empty { <p class="muted">Completá workouts para generar este resumen.</p> }</article></section>
+
+        <section class="content-section"><div class="section-title"><div><span class="eyebrow">METAS PERSONALES</span><h2>Mis objetivos</h2></div><button mat-flat-button type="button" (click)="actionPanel.set('goal')"><mat-icon>add</mat-icon>Nuevo</button></div><div class="goal-grid">@for (goal of data.goals; track goal.id) { <article class="goal-card"><div><span class="goal-icon"><mat-icon>{{ goal.type === 'BodyWeight' ? 'monitor_weight' : goal.type === 'ExerciseWeight' ? 'fitness_center' : 'flag' }}</mat-icon></span><span class="soft-chip">{{ goal.status === 'Completed' ? 'COMPLETADO' : 'EN CURSO' }}</span></div><h3>{{ goal.title }}</h3><p>{{ goal.currentValue }} / {{ goal.targetValue }} {{ goal.unit }}</p><mat-progress-bar mode="determinate" [value]="goal.progressPercent" /><footer><span>{{ goal.progressPercent }}%</span><button mat-button type="button" (click)="updateGoal(goal)">Actualizar</button></footer></article> } @empty { <div class="empty-inline"><mat-icon>flag</mat-icon><span>Creá una meta concreta para seguir tu avance.</span></div> }</div></section>
+
+        <section class="progress-layout"><article class="data-panel"><div class="section-title"><h2>Evolución por ejercicio</h2></div><mat-form-field appearance="outline"><mat-label>Elegir ejercicio</mat-label><mat-select (selectionChange)="selectExerciseProgress($event.value)">@for (exercise of exercises(); track exercise.id) { <mat-option [value]="exercise.id">{{ exercise.name }}</mat-option> }</mat-select></mat-form-field>@if (selectedExerciseProgress(); as history) { <div class="exercise-highlight"><mat-icon>local_fire_department</mat-icon><div><strong>{{ history.bestWeight || 0 }} kg</strong><span>Mejor peso</span></div><div><strong>{{ history.totalVolume | number:'1.0-0' }} kg</strong><span>Volumen</span></div></div>@if ((history.weightDelta || 0) > 0) { <p class="positive-message"><mat-icon>trending_up</mat-icon>Subiste {{ history.weightDelta }} kg respecto de la sesión anterior.</p> }}</article>
+          <article class="data-panel"><div class="section-title"><h2>Asistencias recientes</h2><button mat-stroked-button type="button" (click)="manualCheckIn()">Registrar</button></div>@for (item of attendance().slice(0, 6); track item.id) { <div class="history-row"><span class="status-dot" [class.verified]="item.isVerified"></span><span><strong>{{ item.date | date:'EEEE d MMMM' }}</strong><small>{{ item.isVerified ? 'Verificada en el gimnasio' : 'Registro manual' }}</small></span><mat-icon>{{ item.isVerified ? 'verified' : 'person' }}</mat-icon></div> } @empty { <p class="muted">Todavía no registraste asistencias.</p> }</article></section>
+      }
+    }
+
+    @if (section() === 'community') {
+      <section class="page-heading"><span class="eyebrow">MOTIVACIÓN</span><h1>Comunidad</h1><p>Tus logros, puntos y posición del mes.</p></section>
+      <mat-tab-group animationDuration="160ms" class="community-tabs">
+        <mat-tab label="Logros"><section class="tab-content"><div class="achievement-summary"><mat-icon>emoji_events</mat-icon><div><strong>Nivel {{ achievements()?.level || 1 }}</strong><span>{{ achievements()?.points || 0 }} puntos acumulados</span></div></div><div class="achievement-grid">@for (achievement of achievements()?.achievements || []; track achievement.id) { <article class="achievement-card" [class.locked]="!achievement.isUnlocked"><div class="badge-image">@if (achievement.badgeImageUrl) { <img [src]="achievement.badgeImageUrl" [alt]="achievement.name"> } @else { <mat-icon>{{ achievement.icon || 'emoji_events' }}</mat-icon> }</div><span class="tier">{{ tierLabel(achievement.tier) }}</span><h3>{{ achievement.name }}</h3><p>{{ achievement.description }}</p><mat-progress-bar mode="determinate" [value]="achievement.progressPercent" /><footer><span>{{ achievement.currentValue }} / {{ achievement.requiredCount }}</span><strong>+{{ achievement.points }} pts</strong></footer></article> } @empty { <div class="empty-state"><mat-icon>emoji_events</mat-icon><h2>Los logros aparecerán acá</h2></div> }</div></section></mat-tab>
+        <mat-tab label="Mis puntos"><section class="tab-content"><div class="points-total"><span>Saldo total</span><strong>{{ achievements()?.points || 0 }}</strong><small>puntos</small></div><div class="point-list">@for (item of points(); track item.id) { <div class="point-row"><span class="point-icon"><mat-icon>{{ pointIcon(item.sourceType) }}</mat-icon></span><span><strong>{{ item.description }}</strong><small>{{ item.occurredAt | date:'dd/MM/yyyy' }} · {{ item.isVerified ? 'Verificado' : 'Autodeclarado' }}</small></span><b>+{{ item.points }}</b></div> } @empty { <p class="muted">Tus próximos movimientos de puntos aparecerán acá.</p> }</div></section></mat-tab>
+        <mat-tab label="Ranking"><section class="tab-content">@if ((ranking()?.items?.length || 0) > 0) { <div class="podium">@for (item of (ranking()?.items || []).slice(0, 3); track item.clientId) { <article [class.first]="item.position === 1"><span>#{{ item.position }}</span><img [src]="item.avatarUrl || 'https://placehold.co/100x100?text=' + item.nombre[0]" alt=""><strong>{{ item.nombre }}</strong><b>{{ item.score }} pts</b></article> }</div><div class="ranking-list">@for (item of ranking()?.items || []; track item.clientId) { <div><strong>#{{ item.position }}</strong><span>{{ item.nombre }} {{ item.apellido }}</span><small>{{ item.verifiedPoints || 0 }} verificados · {{ item.habitPoints || 0 }} hábitos</small><b>{{ item.totalPoints || item.score }}</b></div> }</div> } @else { <div class="empty-state"><mat-icon>leaderboard</mat-icon><h2>El ranking empieza con tu próxima actividad</h2></div> }</section></mat-tab>
+      </mat-tab-group>
+    }
+
+    @if (section() === 'profile') {
+      <section class="page-heading"><span class="eyebrow">TU CUENTA</span><h1>Perfil</h1><p>Mantené tus datos personales actualizados.</p></section>
+      @if (dashboard(); as data) { <section class="profile-layout"><aside class="profile-card"><div class="avatar-wrap"><img [src]="profileForm.controls.avatarUrl.value || 'https://placehold.co/180x180?text=' + data.profile.nombre[0]" alt=""><label><mat-icon>photo_camera</mat-icon><input type="file" accept="image/*" hidden (change)="uploadAvatar($event)"></label></div><h2>{{ data.profile.nombre }} {{ data.profile.apellido }}</h2><p>{{ data.profile.email }}</p><span class="soft-chip">{{ data.profile.branchNombre }}</span></aside><form class="profile-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()"><div class="section-title"><h2>Datos personales</h2><span>DNI y email se modifican en recepción</span></div><div class="form-grid"><mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput formControlName="nombre"></mat-form-field><mat-form-field appearance="outline"><mat-label>Apellido</mat-label><input matInput formControlName="apellido"></mat-form-field><mat-form-field appearance="outline"><mat-label>Fecha de nacimiento</mat-label><input matInput type="date" formControlName="fechaNacimiento"></mat-form-field><mat-form-field appearance="outline"><mat-label>Teléfono</mat-label><input matInput formControlName="telefono"></mat-form-field><mat-form-field appearance="outline" class="wide"><mat-label>Dirección</mat-label><input matInput formControlName="direccion"></mat-form-field><mat-form-field appearance="outline" class="wide"><mat-label>Bio y motivación</mat-label><textarea matInput rows="4" formControlName="studentBio"></textarea></mat-form-field></div><button mat-flat-button type="submit"><mat-icon>save</mat-icon>Guardar cambios</button></form><section class="profile-secondary"><article><mat-icon>badge</mat-icon><span><strong>DNI</strong><small>{{ data.profile.dni || 'Sin registrar' }}</small></span></article><article><mat-icon>credit_card</mat-icon><span><strong>{{ data.membership?.planNombre || 'Sin membresía' }}</strong><small>@if (data.membership) { Vence {{ data.membership.fechaFin | date:'dd/MM/yyyy' }} }</small></span></article><article><mat-icon>medical_information</mat-icon><span><strong>{{ data.profile.tieneLesion ? 'Lesion informada' : 'Sin lesiones informadas' }}</strong><small>{{ data.profile.observaciones || 'No hay observaciones del equipo.' }}</small></span></article><button type="button" (click)="logout()"><mat-icon>logout</mat-icon><span>Salir de mi cuenta</span></button></section></section> }
+    }
+
+    @if (section() === 'exercises') {
+      <section class="page-heading"><a mat-button routerLink="/entrenar"><mat-icon>arrow_back</mat-icon>Entrenar</a><span class="eyebrow">BIBLIOTECA</span><h1>Ejercicios</h1><p>Consultá técnica, músculos e indicaciones.</p></section><mat-form-field class="exercise-search" appearance="outline"><mat-icon matPrefix>search</mat-icon><mat-label>Buscar ejercicio o músculo</mat-label><input matInput [formControl]="search"></mat-form-field><section class="exercise-grid">@for (exercise of filteredExercises(); track exercise.id) { <a [routerLink]="['/ejercicios', exercise.qrSlug || exercise.id]" class="exercise-card">@if (exercise.photoUrl) { <img [src]="exercise.photoUrl" [alt]="exercise.name"> } @else { <span class="exercise-fallback"><mat-icon>fitness_center</mat-icon></span> }<div><span>{{ exercise.muscleGroup }}</span><h2>{{ exercise.name }}</h2><p>{{ exercise.description }}</p><small>{{ exercise.musclesInvolved || 'Trabajo general' }}</small></div><mat-icon>arrow_forward</mat-icon></a> } @empty { <div class="empty-state"><mat-icon>search_off</mat-icon><h2>No encontramos ejercicios</h2></div> }</section>
+    }
+  </div>
+
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <a routerLink="/inicio" routerLinkActive="active"><mat-icon>home</mat-icon><span>Inicio</span></a>
+    <a routerLink="/entrenar" routerLinkActive="active"><mat-icon>fitness_center</mat-icon><span>Entrenar</span></a>
+    <a routerLink="/progreso" routerLinkActive="active"><mat-icon>monitoring</mat-icon><span>Progreso</span></a>
+    <a routerLink="/comunidad" routerLinkActive="active"><mat-icon>emoji_events</mat-icon><span>Comunidad</span></a>
+    <a routerLink="/perfil" routerLinkActive="active"><mat-icon>person</mat-icon><span>Perfil</span></a>
+  </nav>
+
+  @if (actionPanel()) { <div class="sheet-backdrop" (click)="actionPanel.set(null)"><section class="bottom-sheet" (click)="$event.stopPropagation()"><header><span class="sheet-handle"></span><button mat-icon-button type="button" (click)="actionPanel.set(null)"><mat-icon>close</mat-icon></button></header>
+    @if (actionPanel() === 'habit') { <h2>¿Qué hábito cumpliste?</h2><p>Son autodeclarados y suman pocos puntos.</p><div class="habit-picker">@for (habit of habitDefinitions(); track habit.id) { <button type="button" [disabled]="habitRegisteredToday(habit)" (click)="registerHabitDefinition(habit); actionPanel.set(null)"><span class="quick-icon green"><mat-icon>check_circle</mat-icon></span><span><strong>{{ habit.name }}</strong><small>{{ habit.pointsPerEntry }} puntos</small></span><mat-icon>{{ habitRegisteredToday(habit) ? 'done' : 'add' }}</mat-icon></button> }</div> }
+    @if (actionPanel() === 'weight') { <h2>Registrar peso</h2><p>Usalo como una referencia de tendencia, no como única medida.</p><form [formGroup]="weightForm" (ngSubmit)="saveWeight()" class="sheet-form"><mat-form-field appearance="outline"><mat-label>Peso</mat-label><input matInput type="number" formControlName="weightKg"><span matTextSuffix>kg</span></mat-form-field><mat-form-field appearance="outline"><mat-label>Fecha</mat-label><input matInput type="date" formControlName="measuredAt"></mat-form-field><mat-form-field appearance="outline" class="wide"><mat-label>Nota opcional</mat-label><input matInput formControlName="notes"></mat-form-field><button mat-flat-button type="submit">Guardar medición</button></form> }
+    @if (actionPanel() === 'goal') { <h2>Nuevo objetivo</h2><p>Elegí una meta concreta y medible.</p><form [formGroup]="goalForm" (ngSubmit)="saveGoal()" class="sheet-form"><mat-form-field appearance="outline" class="wide"><mat-label>Tipo</mat-label><mat-select formControlName="type"><mat-option value="BodyWeight">Peso corporal</mat-option><mat-option value="ExerciseWeight">Peso en ejercicio</mat-option><mat-option value="Attendance">Asistencias</mat-option><mat-option value="WorkoutCount">Workouts</mat-option><mat-option value="Custom">Personalizado</mat-option></mat-select></mat-form-field><mat-form-field appearance="outline" class="wide"><mat-label>Objetivo</mat-label><input matInput formControlName="title"></mat-form-field><mat-form-field appearance="outline"><mat-label>Valor actual</mat-label><input matInput type="number" formControlName="currentValue"></mat-form-field><mat-form-field appearance="outline"><mat-label>Meta</mat-label><input matInput type="number" formControlName="targetValue"></mat-form-field><mat-form-field appearance="outline"><mat-label>Unidad</mat-label><input matInput formControlName="unit"></mat-form-field><mat-form-field appearance="outline"><mat-label>Fecha objetivo</mat-label><input matInput type="date" formControlName="targetDate"></mat-form-field><button mat-flat-button type="submit">Crear objetivo</button></form> }
+    @if (actionPanel() === 'schedule') { <h2>Reprogramar {{ scheduleWorkout()?.name }}</h2><p>Elegí los días que mejor encajan con tu semana.</p><div class="day-picker">@for (day of [1,2,3,4,5,6,0]; track day) { <button type="button" [class.selected]="scheduleDays().includes(day)" (click)="toggleScheduleDay(day)">{{ getDayLabel(day) }}</button> }</div><button mat-flat-button type="button" (click)="saveSchedule()">Guardar agenda</button> }
+  </section></div> }
+</main>
