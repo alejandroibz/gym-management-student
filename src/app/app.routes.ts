@@ -14,6 +14,7 @@ export const routes: Routes = [
   { path: 'ejercicios', canActivate: [authGuardFn, studentRoleGuard], loadComponent: studentPage, data: { section: 'exercises' } },
   { path: 'ejercicios/:slug', canActivate: [authGuardFn, studentRoleGuard], loadComponent: () => import('./student/exercise-detail-page').then(m => m.ExerciseDetailPage) },
   { path: 'asistencia/:token', canActivate: [authGuardFn, studentRoleGuard], loadComponent: () => import('./student/attendance-checkin-page').then(m => m.AttendanceCheckinPage) },
+  { path: 'contratos/:id/firmar', canActivate: [authGuardFn, studentRoleGuard], loadComponent: () => import('./student/contract-signature-page/contract-signature-page').then(m => m.ContractSignaturePage) },
   { path: 'sin-acceso', loadComponent: () => import('./core/access-denied').then(m => m.AccessDenied) },
   { path: '', pathMatch: 'full', redirectTo: 'inicio' },
   { path: '**', redirectTo: 'inicio' }

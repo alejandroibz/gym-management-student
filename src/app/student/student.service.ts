@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AchievementResponse, Exercise, ExerciseProgressHistory, HabitDefinition, HabitLog, RankingResponse, RoutineAssignment, StudentAttendance, StudentBodyMeasurement, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentNotification, StudentPayment, StudentPointTransaction, StudentProgressDashboard, StudentTrainingOverview, WorkoutSessionPayload } from './student.models';
+import { AchievementResponse, Exercise, ExerciseProgressHistory, HabitDefinition, HabitLog, RankingResponse, RoutineAssignment, StudentAttendance, StudentBodyMeasurement, StudentContract, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentNotification, StudentPayment, StudentPointTransaction, StudentProfile, StudentProgressDashboard, StudentTrainingOverview, WorkoutSessionPayload } from './student.models';
 
 @Injectable({ providedIn: 'root' })
 export class StudentService {
@@ -17,8 +17,8 @@ export class StudentService {
     return this.http.get<StudentHome>(`${this.apiUrl}/Student/home`);
   }
 
-  updateProfile(payload: { nombre?: string | null; apellido?: string | null; fechaNacimiento?: string | null; telefono?: string | null; direccion?: string | null; avatarUrl?: string | null; studentBio?: string | null }): Observable<unknown> {
-    return this.http.put(`${this.apiUrl}/Student/me`, payload);
+  updateProfile(payload: { nombre?: string | null; apellido?: string | null; fechaNacimiento?: string | null; telefono?: string | null; direccion?: string | null; avatarUrl?: string | null; studentBio?: string | null }): Observable<StudentProfile> {
+    return this.http.put<StudentProfile>(`${this.apiUrl}/Student/me`, payload);
   }
 
   uploadAvatar(file: File): Observable<{ url: string }> {
@@ -26,6 +26,11 @@ export class StudentService {
     form.append('file', file);
     return this.http.post<{ url: string }>(`${this.apiUrl}/files`, form, { params: new HttpParams().set('folder', 'student-platform/avatars') });
   }
+
+  getContracts():Observable<StudentContract[]>{return this.http.get<StudentContract[]>(`${this.apiUrl}/contracts/mine`)}
+  getContract(id:number):Observable<StudentContract>{return this.http.get<StudentContract>(`${this.apiUrl}/contracts/${id}`)}
+  signContract(id:number,payload:{signerName:string;signerDni:string;signatureDataUrl:string;accepted:boolean}):Observable<StudentContract>{return this.http.post<StudentContract>(`${this.apiUrl}/contracts/${id}/sign`,payload)}
+  downloadContract(id:number):Observable<Blob>{return this.http.get(`${this.apiUrl}/contracts/${id}/pdf`,{responseType:'blob'})}
 
   getTrainingOverview(): Observable<StudentTrainingOverview> {
     return this.http.get<StudentTrainingOverview>(`${this.apiUrl}/Student/training-plans`);

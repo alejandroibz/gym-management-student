@@ -294,3 +294,6 @@ export interface WorkoutSessionPayload {
     }>;
   }>;
 }
+
+export interface StudentContractClause { sortOrder:number; title:string; body:string; }
+export interface StudentContract { id:number; clientId:number; clientName:string; clientDni?:string|null; templateVersion:number; templateName:string; status:string; signatureMethod?:string|null; issuedAt:string; signedAt?:string|null; signedByName?:string|null; acceptanceText:string; snapshot:{clientName:string;clientDni:string;branchName:string;branchAddress:string;membershipName:string;membershipPeriod:string;issuedAt:string;clauses:StudentContractClause[]};documents:Array<{id:number;documentType:string;fileName:string;uploadedAt:string}>; }

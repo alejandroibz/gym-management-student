@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -14,8 +15,9 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { AuthService } from '@auth0/auth0-angular';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { AchievementResponse, Exercise, ExerciseProgressHistory, HabitDefinition, HabitLog, RankingResponse, RoutineAssignment, StudentAttendance, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentPayment, StudentPointTransaction, StudentProgressDashboard, StudentTrainingOverview } from './student.models';
+import { AchievementResponse, Exercise, ExerciseProgressHistory, HabitDefinition, HabitLog, RankingResponse, RoutineAssignment, StudentAttendance, StudentContract, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentPayment, StudentPointTransaction, StudentProgressDashboard, StudentTrainingOverview } from './student.models';
 import { StudentService } from './student.service';
+import { AvatarCropDialog } from './avatar-crop-dialog/avatar-crop-dialog';
 
 @Component({
   selector: 'app-student-page',
@@ -26,6 +28,7 @@ import { StudentService } from './student.service';
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -45,6 +48,7 @@ export class StudentPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   readonly section = signal<'home' | 'training' | 'progress' | 'community' | 'profile' | 'exercises'>('home');
   readonly home = signal<StudentHome | null>(null);
@@ -53,7 +57,7 @@ export class StudentPage {
   readonly points = signal<StudentPointTransaction[]>([]);
   readonly attendance = signal<StudentAttendance[]>([]);
   readonly selectedExerciseProgress = signal<ExerciseProgressHistory | null>(null);
-  readonly actionPanel = signal<'weight' | 'goal' | 'habit' | 'schedule' | null>(null);
+  readonly actionPanel = signal<'weight' | 'goal' | 'habit' | 'schedule' | 'notifications' | null>(null);
   readonly scheduleWorkout = signal<RoutineAssignment | null>(null);
   readonly scheduleDays = signal<number[]>([]);
   readonly isDark = signal(localStorage.getItem('student-theme') === 'dark');
@@ -68,8 +72,10 @@ export class StudentPage {
   readonly achievements = signal<AchievementResponse | null>(null);
   readonly ranking = signal<RankingResponse | null>(null);
   readonly exercises = signal<Exercise[]>([]);
+  readonly contracts = signal<StudentContract[]>([]);
   readonly feedback = signal('');
   readonly isLoading = signal(false);
+  readonly isUploadingAvatar = signal(false);
   readonly workoutWeights = signal<Record<string, number>>({});
   readonly workoutReps = signal<Record<string, number>>({});
   readonly search = this.formBuilder.nonNullable.control('');
@@ -77,6 +83,18 @@ export class StudentPage {
     const term = this.search.value.trim().toLowerCase();
     return this.exercises().filter(item => !term || `${item.name} ${item.muscleGroup} ${item.musclesInvolved ?? ''}`.toLowerCase().includes(term));
   });
+  readonly unreadNotifications = computed(() => this.home()?.notifications.filter(item => !item.readAt) ?? []);
+  readonly attendedToday = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.attendance().some(item => item.date.slice(0, 10) === today);
+  });
+  readonly habitsCompletedToday = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return new Set(this.habitEntries()
+      .filter(item => item.entryDate.slice(0, 10) === today)
+      .map(item => item.habitDefinitionId)).size;
+  });
+  readonly activeHabitCount = computed(() => this.habitDefinitions().filter(item => item.isActive).length);
 
   readonly profileForm = this.formBuilder.nonNullable.group({
     nombre: [''],
@@ -149,6 +167,7 @@ export class StudentPage {
     this.service.getProgress().subscribe({ next: progress => this.progress.set(progress) });
     this.service.getPoints().subscribe({ next: points => this.points.set(points) });
     this.service.getAttendance().subscribe({ next: attendance => this.attendance.set(attendance) });
+    this.service.getContracts().subscribe({next:items=>this.contracts.set(items)});
   }
 
   saveProfile(): void {
@@ -258,6 +277,10 @@ export class StudentPage {
   }
 
   manualCheckIn(): void {
+    if (this.attendedToday()) {
+      this.toast('Tu asistencia de hoy ya está registrada.');
+      return;
+    }
     this.service.checkIn({ mode: 'Manual' }).subscribe({
       next: () => { this.toast('Asistencia manual registrada.'); this.service.getAttendance().subscribe(items => this.attendance.set(items)); },
       error: error => this.toast(error?.error?.errors?.[0] ?? 'No pudimos registrar tu asistencia.')
@@ -296,9 +319,55 @@ export class StudentPage {
   }
 
   uploadAvatar(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
-    this.service.uploadAvatar(file).subscribe({ next: item => { this.profileForm.controls.avatarUrl.setValue(item.url); this.toast('Foto lista para guardar.'); }, error: () => this.toast('No pudimos subir la foto.') });
+    input.value = '';
+    if (!file.type.startsWith('image/')) {
+      this.toast('Elegí un archivo de imagen válido.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      this.toast('La imagen no puede superar los 10 MB.');
+      return;
+    }
+
+    this.dialog.open(AvatarCropDialog, {
+      data: { file },
+      width: '460px',
+      maxWidth: 'calc(100vw - 1rem)',
+      maxHeight: 'calc(100dvh - 1rem)',
+      autoFocus: false,
+      restoreFocus: true,
+      panelClass: 'student-avatar-crop-dialog'
+    }).afterClosed().subscribe(croppedFile => {
+      if (!croppedFile) return;
+      this.isUploadingAvatar.set(true);
+      this.service.uploadAvatar(croppedFile).subscribe({
+        next: item => {
+          this.profileForm.controls.avatarUrl.setValue(item.url);
+          this.service.updateProfile(this.profileForm.getRawValue()).subscribe({
+            next: profile => {
+              this.dashboard.update(current => current ? { ...current, profile } : current);
+              this.home.update(current => current ? {
+                ...current,
+                dashboard: { ...current.dashboard, profile }
+              } : current);
+              this.isUploadingAvatar.set(false);
+              this.toast('Foto de perfil actualizada.');
+            },
+            error: () => {
+              this.isUploadingAvatar.set(false);
+              this.toast('La foto se subió, pero no pudimos guardarla en tu perfil.');
+            }
+          });
+        },
+        error: () => {
+          this.isUploadingAvatar.set(false);
+          this.toast('No pudimos subir la foto.');
+        }
+      });
+    });
   }
 
   selectExerciseProgress(exerciseId: number): void {
@@ -322,7 +391,13 @@ export class StudentPage {
   }
 
   markNotification(id: number, actionUrl?: string | null): void {
-    this.service.markNotificationRead(id).subscribe();
+    this.service.markNotificationRead(id).subscribe({
+      next: () => this.home.update(current => current ? {
+        ...current,
+        notifications: current.notifications.map(item => item.id === id ? { ...item, readAt: new Date().toISOString() } : item)
+      } : current)
+    });
+    this.actionPanel.set(null);
     if (actionUrl) this.router.navigateByUrl(actionUrl);
   }
 
@@ -347,4 +422,6 @@ export class StudentPage {
   logout(): void {
     this.auth.logout({ logoutParams: { returnTo: environment.auth0.logoutReturnTo } });
   }
+
+  downloadContract(contract:StudentContract):void{this.service.downloadContract(contract.id).subscribe(blob=>{const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`contrato-${contract.clientName}.pdf`;a.click();URL.revokeObjectURL(url)})}
 }
