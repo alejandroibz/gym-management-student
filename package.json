@@ -5,6 +5,7 @@
   "scripts": {
     "start": "ng serve --host 127.0.0.1 --port 4301",
     "build": "ng build",
+    "deploy:github": "ng build --configuration production --base-href / && ngh --dir=dist/gym-management-student/browser --cname=simbiosisgym.com.ar",
     "watch": "ng build --watch --configuration development"
   },
   "packageManager": "npm@11.8.0",
@@ -25,6 +26,7 @@
     "@angular/build": "^21.2.7",
     "@angular/cli": "^21.2.7",
     "@angular/compiler-cli": "^21.2.0",
+    "angular-cli-ghpages": "^3.0.3",
     "typescript": "~5.9.2"
   }
 }
