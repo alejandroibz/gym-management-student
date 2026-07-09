@@ -164,9 +164,11 @@ export interface TrainingPlanAssignment {
   id: number;
   trainingPlanId: number;
   trainingPlanName: string;
+  trainingPlanDescription?: string | null;
   trainingPlanGoal: string;
   trainingPlanLevel: string;
   workoutCount: number;
+  weeklyCompleted: number;
   assignedAt: string;
   startsAt?: string | null;
   endsAt?: string | null;

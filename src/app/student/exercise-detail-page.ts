@@ -25,6 +25,7 @@ export class ExerciseDetailPage {
   readonly exercise = signal<Exercise | null>(null);
   readonly isLoading = signal(true);
   readonly feedback = signal('');
+  readonly returnUrl = this.getReturnUrl();
 
   constructor() {
     const slug = this.route.snapshot.paramMap.get('slug') ?? '';
@@ -46,5 +47,10 @@ export class ExerciseDetailPage {
     const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{6,})/);
     if (!match) return null;
     return this.sanitizer.bypassSecurityTrustResourceUrl(`https://www.youtube.com/embed/${match[1]}`);
+  }
+
+  private getReturnUrl(): string {
+    const value = this.route.snapshot.queryParamMap.get('returnUrl');
+    return value?.startsWith('/') && !value.startsWith('//') ? value : '/ejercicios';
   }
 }

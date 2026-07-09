@@ -95,6 +95,7 @@ export class StudentPage {
       .map(item => item.habitDefinitionId)).size;
   });
   readonly activeHabitCount = computed(() => this.habitDefinitions().filter(item => item.isActive).length);
+  readonly activeTrainingPlan = computed(() => this.training()?.plans[0] ?? null);
 
   readonly profileForm = this.formBuilder.nonNullable.group({
     nombre: [''],

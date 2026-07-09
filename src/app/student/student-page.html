@@ -21,19 +21,19 @@
           <div class="level-pill"><mat-icon>bolt</mat-icon><span>Nivel {{ data.dashboard.progress.level }}</span></div>
         </section>
 
-        @if (data.todayWorkout; as workout) {
+        @if (activeTrainingPlan(); as plan) {
           <section class="today-workout">
             <div class="today-copy">
-              <span class="overline">HOY TOCA</span>
-              <h2>{{ workout.name }}</h2>
-              <p>{{ workout.description || workout.goal }}</p>
-              <div class="chip-row"><span><mat-icon>fitness_center</mat-icon>{{ workout.exercises.length }} ejercicios</span><span><mat-icon>schedule</mat-icon>{{ workout.exercises.length * 8 }} min aprox.</span></div>
-              <button mat-flat-button type="button" (click)="startWorkout(workout)"><mat-icon>play_arrow</mat-icon>Empezar workout</button>
+              <span class="overline">PLAN DE EJERCICIO</span>
+              <h2>{{ plan.trainingPlanName }}</h2>
+              <p>{{ plan.trainingPlanDescription || plan.trainingPlanGoal }}</p>
+              <div class="chip-row"><span><mat-icon>fitness_center</mat-icon>{{ plan.workoutCount }} workouts</span><span><mat-icon>calendar_month</mat-icon>{{ plan.weeklyCompleted }} de {{ plan.workoutCount }} esta semana</span></div>
+              <a mat-flat-button routerLink="/entrenar"><mat-icon>play_arrow</mat-icon>Entrenar</a>
             </div>
             <div class="workout-visual"><mat-icon>exercise</mat-icon></div>
           </section>
-        } @else {
-          <section class="empty-hero"><mat-icon>event_available</mat-icon><div><h2>Día libre</h2><p>No tenés un workout programado para hoy.</p></div><a mat-stroked-button routerLink="/entrenar">Ver entrenamientos</a></section>
+        } @else if (training()) {
+          <section class="empty-hero"><mat-icon>event_available</mat-icon><div><h2>Sin plan activo</h2><p>Cuando tu entrenador te asigne un plan, lo vas a ver acá.</p></div><a mat-stroked-button routerLink="/entrenar">Ver entrenamientos</a></section>
         }
 
         <section class="weekly-card">
@@ -95,11 +95,11 @@
     }
 
     @if (section() === 'community') {
-      <section class="page-heading"><span class="eyebrow">MOTIVACIÓN</span><h1>Comunidad</h1><p>Tus logros, puntos y posición del mes.</p></section>
+      <section class="page-heading"><span class="eyebrow">MOTIVACIÓN</span><h1>Comunidad</h1><p>Tus logros, puntos acumulados y posición del mes.</p></section>
       <mat-tab-group animationDuration="160ms" class="community-tabs">
         <mat-tab label="Logros"><section class="tab-content"><div class="achievement-summary"><mat-icon>emoji_events</mat-icon><div><strong>Nivel {{ achievements()?.level || 1 }}</strong><span>{{ achievements()?.points || 0 }} puntos acumulados</span></div></div><div class="achievement-grid">@for (achievement of achievements()?.achievements || []; track achievement.id) { <article class="achievement-card" [class.locked]="!achievement.isUnlocked"><div class="badge-image">@if (achievement.badgeImageUrl) { <img [src]="achievement.badgeImageUrl" [alt]="achievement.name"> } @else { <mat-icon>{{ achievement.icon || 'emoji_events' }}</mat-icon> }</div><span class="tier">{{ tierLabel(achievement.tier) }}</span><h3>{{ achievement.name }}</h3><p>{{ achievement.description }}</p><mat-progress-bar mode="determinate" [value]="achievement.progressPercent" /><footer><span>{{ achievement.currentValue }} / {{ achievement.requiredCount }}</span><strong>+{{ achievement.points }} pts</strong></footer></article> } @empty { <div class="empty-state"><mat-icon>emoji_events</mat-icon><h2>Los logros aparecerán acá</h2></div> }</div></section></mat-tab>
-        <mat-tab label="Mis puntos"><section class="tab-content"><div class="points-total"><span>Saldo total</span><strong>{{ achievements()?.points || 0 }}</strong><small>puntos</small></div><div class="point-list">@for (item of points(); track item.id) { <div class="point-row"><span class="point-icon"><mat-icon>{{ pointIcon(item.sourceType) }}</mat-icon></span><span><strong>{{ item.description }}</strong><small>{{ item.occurredAt | date:'dd/MM/yyyy' }} · {{ item.isVerified ? 'Verificado' : 'Autodeclarado' }}</small></span><b>+{{ item.points }}</b></div> } @empty { <p class="muted">Tus próximos movimientos de puntos aparecerán acá.</p> }</div></section></mat-tab>
-        <mat-tab label="Ranking"><section class="tab-content">@if ((ranking()?.items?.length || 0) > 0) { <div class="podium">@for (item of (ranking()?.items || []).slice(0, 3); track item.clientId) { <article [class.first]="item.position === 1"><span>#{{ item.position }}</span><img [src]="item.avatarUrl || 'https://placehold.co/100x100?text=' + item.nombre[0]" alt=""><strong>{{ item.nombre }}</strong><b>{{ item.score }} pts</b></article> }</div><div class="ranking-list">@for (item of ranking()?.items || []; track item.clientId) { <div><strong>#{{ item.position }}</strong><span>{{ item.nombre }} {{ item.apellido }}</span><small>{{ item.verifiedPoints || 0 }} verificados · {{ item.habitPoints || 0 }} hábitos</small><b>{{ item.totalPoints || item.score }}</b></div> }</div> } @else { <div class="empty-state"><mat-icon>leaderboard</mat-icon><h2>El ranking empieza con tu próxima actividad</h2></div> }</section></mat-tab>
+        <mat-tab label="Mis puntos"><section class="tab-content"><div class="points-total"><span>Saldo acumulado</span><strong>{{ achievements()?.points || 0 }}</strong><small>puntos</small></div><div class="point-list"><div class="list-context">Movimientos recientes</div>@for (item of points(); track item.id) { <div class="point-row"><span class="point-icon"><mat-icon>{{ pointIcon(item.sourceType) }}</mat-icon></span><span><strong>{{ item.description }}</strong><small>{{ item.occurredAt | date:'dd/MM/yyyy' }} · {{ item.isVerified ? 'Verificado' : 'Autodeclarado' }}</small></span><b>+{{ item.points }}</b></div> } @empty { <p class="muted">Tus próximos movimientos de puntos aparecerán acá.</p> }</div></section></mat-tab>
+        <mat-tab label="Ranking"><section class="tab-content">@if ((ranking()?.items?.length || 0) > 0) { <div class="ranking-context">Ranking del mes actual</div><div class="podium">@for (item of (ranking()?.items || []).slice(0, 3); track item.clientId) { <article [class.first]="item.position === 1"><span>#{{ item.position }}</span><img [src]="item.avatarUrl || 'https://placehold.co/100x100?text=' + item.nombre[0]" alt=""><strong>{{ item.nombre }}</strong><b>{{ item.score }} pts mes</b></article> }</div><div class="ranking-list">@for (item of ranking()?.items || []; track item.clientId) { <div><strong>#{{ item.position }}</strong><span>{{ item.nombre }} {{ item.apellido }}</span><small>{{ item.verifiedPoints || 0 }} verificados · {{ item.habitPoints || 0 }} hábitos</small><b>{{ item.score }} mes</b></div> }</div> } @else { <div class="empty-state"><mat-icon>leaderboard</mat-icon><h2>El ranking empieza con tu próxima actividad</h2></div> }</section></mat-tab>
       </mat-tab-group>
     }
 
