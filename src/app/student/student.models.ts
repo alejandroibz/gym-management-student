@@ -272,6 +272,7 @@ export interface Exercise {
   description: string;
   muscleGroup: string;
   musclesInvolved?: string | null;
+  muscles?: Array<{ id: number; name: string; muscleGroupName?: string | null }>;
   photoUrl?: string | null;
   videoUrl?: string | null;
   qrSlug?: string | null;

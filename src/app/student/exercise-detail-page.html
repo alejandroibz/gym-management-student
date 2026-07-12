@@ -24,6 +24,16 @@
         @if (item.musclesInvolved) {
           <small>{{ item.musclesInvolved }}</small>
         }
+        <button class="anatomy-toggle" mat-stroked-button type="button" (click)="showAnatomy.update(value => !value)">
+          <mat-icon>accessibility_new</mat-icon>
+          {{ showAnatomy() ? 'Ocultar mapa muscular' : 'Ver mapa muscular' }}
+        </button>
+        @if (showAnatomy()) {
+          <app-exercise-body-map
+            [muscleGroup]="item.muscleGroup"
+            [musclesInvolved]="item.musclesInvolved"
+            [muscles]="item.muscles ?? []" />
+        }
         @if (item.videoUrl) {
           @if (getYoutubeEmbedUrl(item.videoUrl); as embedUrl) {
             <iframe class="video-frame" [src]="embedUrl" title="Video del ejercicio" allowfullscreen></iframe>

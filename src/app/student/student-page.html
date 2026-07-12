@@ -105,12 +105,94 @@
 
     @if (section() === 'profile') {
       <section class="page-heading"><span class="eyebrow">TU CUENTA</span><h1>Perfil</h1><p>Mantené tus datos personales actualizados.</p></section>
-      @if (dashboard(); as data) { <section class="profile-layout"><aside class="profile-card"><div class="avatar-wrap"><img [src]="profileForm.controls.avatarUrl.value || 'https://placehold.co/180x180?text=' + data.profile.nombre[0]" alt=""><label><mat-icon>photo_camera</mat-icon><input type="file" accept="image/*" hidden (change)="uploadAvatar($event)"></label></div><h2>{{ data.profile.nombre }} {{ data.profile.apellido }}</h2><p>{{ data.profile.email }}</p><span class="soft-chip">{{ data.profile.branchNombre }}</span></aside><form class="profile-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()"><div class="section-title"><h2>Datos personales</h2><span>DNI y email se modifican en recepción</span></div><div class="form-grid"><mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput formControlName="nombre"></mat-form-field><mat-form-field appearance="outline"><mat-label>Apellido</mat-label><input matInput formControlName="apellido"></mat-form-field><mat-form-field appearance="outline"><mat-label>Fecha de nacimiento</mat-label><input matInput type="date" formControlName="fechaNacimiento"></mat-form-field><mat-form-field appearance="outline"><mat-label>Teléfono</mat-label><input matInput formControlName="telefono"></mat-form-field><mat-form-field appearance="outline" class="wide"><mat-label>Dirección</mat-label><input matInput formControlName="direccion"></mat-form-field><mat-form-field appearance="outline" class="wide"><mat-label>Bio y motivación</mat-label><textarea matInput rows="4" formControlName="studentBio"></textarea></mat-form-field></div><button mat-flat-button type="submit"><mat-icon>save</mat-icon>Guardar cambios</button></form><section class="profile-secondary"><article><mat-icon>badge</mat-icon><span><strong>DNI</strong><small>{{ data.profile.dni || 'Sin registrar' }}</small></span></article><article><mat-icon>credit_card</mat-icon><span><strong>{{ data.membership?.planNombre || 'Sin membresía' }}</strong><small>@if (data.membership) { Vence {{ data.membership.fechaFin | date:'dd/MM/yyyy' }} }</small></span></article><article><mat-icon>medical_information</mat-icon><span><strong>{{ data.profile.tieneLesion ? 'Lesion informada' : 'Sin lesiones informadas' }}</strong><small>{{ data.profile.observaciones || 'No hay observaciones del equipo.' }}</small></span></article><button type="button" (click)="logout()"><mat-icon>logout</mat-icon><span>Salir de mi cuenta</span></button></section></section> }
+      @if (dashboard(); as data) {
+        <section class="profile-layout">
+          <aside class="profile-card">
+            <div class="avatar-wrap" [class.readonly]="!isEditingProfile()">
+              <img [src]="profileForm.controls.avatarUrl.value || 'https://placehold.co/180x180?text=' + data.profile.nombre[0]" alt="">
+              @if (isEditingProfile()) {
+                <label>
+                  <mat-icon>photo_camera</mat-icon>
+                  <input type="file" accept="image/*" hidden (change)="uploadAvatar($event)">
+                </label>
+              }
+            </div>
+            <h2>{{ data.profile.nombre }} {{ data.profile.apellido }}</h2>
+            <p>{{ data.profile.email }}</p>
+            <span class="soft-chip">{{ data.profile.branchNombre }}</span>
+          </aside>
+          <form class="profile-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+            <div class="section-title">
+              <div>
+                <h2>Datos personales</h2>
+                <span>DNI y email se modifican en recepción</span>
+              </div>
+              @if (!isEditingProfile()) {
+                <button mat-stroked-button type="button" (click)="startProfileEditing()">
+                  <mat-icon>edit</mat-icon>
+                  Editar perfil
+                </button>
+              }
+            </div>
+            <div class="form-grid">
+              <mat-form-field appearance="outline"><mat-label>Nombre</mat-label><input matInput formControlName="nombre"></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Apellido</mat-label><input matInput formControlName="apellido"></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Fecha de nacimiento</mat-label><input matInput type="date" formControlName="fechaNacimiento"></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Teléfono</mat-label><input matInput formControlName="telefono"></mat-form-field>
+              <mat-form-field appearance="outline" class="wide"><mat-label>Dirección</mat-label><input matInput formControlName="direccion"></mat-form-field>
+              <mat-form-field appearance="outline" class="wide"><mat-label>Bio y motivación</mat-label><textarea matInput rows="4" formControlName="studentBio"></textarea></mat-form-field>
+            </div>
+            @if (isEditingProfile()) {
+              <div class="profile-actions">
+                <button mat-stroked-button type="button" (click)="cancelProfileEditing()">Cancelar</button>
+                <button mat-flat-button type="submit"><mat-icon>save</mat-icon>Guardar cambios</button>
+              </div>
+            }
+          </form>
+          <section class="profile-secondary"><article><mat-icon>badge</mat-icon><span><strong>DNI</strong><small>{{ data.profile.dni || 'Sin registrar' }}</small></span></article><article><mat-icon>credit_card</mat-icon><span><strong>{{ data.membership?.planNombre || 'Sin membresía' }}</strong><small>@if (data.membership) { Vence {{ data.membership.fechaFin | date:'dd/MM/yyyy' }} }</small></span></article><article><mat-icon>medical_information</mat-icon><span><strong>{{ data.profile.tieneLesion ? 'Lesion informada' : 'Sin lesiones informadas' }}</strong><small>{{ data.profile.observaciones || 'No hay observaciones del equipo.' }}</small></span></article><button type="button" (click)="logout()"><mat-icon>logout</mat-icon><span>Salir de mi cuenta</span></button></section>
+        </section>
+      }
       <section class="student-contracts"><div class="section-title"><div><span class="eyebrow">DOCUMENTACIÓN</span><h2>Mis contratos</h2></div></div>@for(contract of contracts();track contract.id){<article [class.pending]="contract.status==='PendingSignature'"><span class="contract-icon"><mat-icon>{{contract.status==='Signed'?'verified':'draw'}}</mat-icon></span><span><strong>{{contract.templateName}}</strong><small>Versión {{contract.templateVersion}} · {{contract.status==='Signed'?'Firmado':'Pendiente de firma'}}</small></span><button mat-button type="button" (click)="downloadContract(contract)">Descargar</button>@if(contract.status==='PendingSignature'){<a mat-flat-button [routerLink]="['/contratos',contract.id,'firmar']">Revisar y firmar</a>}</article>}@empty{<div class="empty-inline"><mat-icon>description</mat-icon><span>No tenés contratos emitidos.</span></div>}</section>
     }
 
     @if (section() === 'exercises') {
-      <section class="page-heading"><a mat-button routerLink="/entrenar"><mat-icon>arrow_back</mat-icon>Entrenar</a><span class="eyebrow">BIBLIOTECA</span><h1>Ejercicios</h1><p>Consultá técnica, músculos e indicaciones.</p></section><mat-form-field class="exercise-search" appearance="outline"><mat-icon matPrefix>search</mat-icon><mat-label>Buscar ejercicio o músculo</mat-label><input matInput [formControl]="search"></mat-form-field><section class="exercise-grid">@for (exercise of filteredExercises(); track exercise.id) { <a [routerLink]="['/ejercicios', exercise.qrSlug || exercise.id]" class="exercise-card">@if (exercise.photoUrl) { <img [src]="exercise.photoUrl" [alt]="exercise.name"> } @else { <span class="exercise-fallback"><mat-icon>fitness_center</mat-icon></span> }<div><span>{{ exercise.muscleGroup }}</span><h2>{{ exercise.name }}</h2><p>{{ exercise.description }}</p><small>{{ exercise.musclesInvolved || 'Trabajo general' }}</small></div><mat-icon>arrow_forward</mat-icon></a> } @empty { <div class="empty-state"><mat-icon>search_off</mat-icon><h2>No encontramos ejercicios</h2></div> }</section>
+      <section class="page-heading"><a mat-button routerLink="/entrenar"><mat-icon>arrow_back</mat-icon>Entrenar</a><span class="eyebrow">BIBLIOTECA</span><h1>Ejercicios</h1><p>Consultá técnica, músculos e indicaciones.</p></section>
+      <section class="exercise-filter-panel">
+        <div class="exercise-filter-grid">
+          <mat-form-field appearance="outline">
+            <mat-icon matPrefix>search</mat-icon>
+            <mat-label>Nombre del ejercicio</mat-label>
+            <input matInput [formControl]="search" [matAutocomplete]="exerciseNameAutocomplete" placeholder="Ej: sentadilla">
+            <mat-autocomplete #exerciseNameAutocomplete="matAutocomplete">
+              @for (name of exerciseNameOptions(); track name) { <mat-option [value]="name">{{ name }}</mat-option> }
+            </mat-autocomplete>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Músculos</mat-label>
+            <mat-select multiple [value]="selectedMuscles()" (selectionChange)="setExerciseMuscles($event.value)">
+              @for (muscle of availableMuscles(); track muscle) { <mat-option [value]="muscle">{{ muscle }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <div class="exercise-filter-actions">
+            <button mat-stroked-button type="button" (click)="showExerciseAnatomy.update(value => !value)" [class.active]="showExerciseAnatomy()"><mat-icon>accessibility_new</mat-icon>{{ showExerciseAnatomy() ? 'Ocultar mapa' : 'Usar mapa corporal' }}</button>
+            @if (hasExerciseFilters()) { <button mat-button type="button" (click)="clearExerciseFilters()"><mat-icon>close</mat-icon>Limpiar</button> }
+          </div>
+        </div>
+        <div class="exercise-filter-footer">
+          <span>{{ exerciseFilterSummary() }}</span>
+          @if (selectedMuscles().length) {
+            <div class="selected-muscle-list">
+              @for (muscle of selectedMuscles(); track muscle) { <button type="button" (click)="toggleExerciseMuscle(muscle)">{{ muscle }} <mat-icon>close</mat-icon></button> }
+            </div>
+          }
+        </div>
+        @if (showExerciseAnatomy()) {
+          <div class="exercise-anatomy-filter">
+            <app-exercise-body-map [interactive]="true" [selectedLabels]="selectedMuscles()" (zoneToggle)="toggleBodyZone($event)" />
+          </div>
+        }
+      </section>
+      <section class="exercise-grid">@for (exercise of filteredExercises(); track exercise.id) { <a [routerLink]="['/ejercicios', exercise.qrSlug || exercise.id]" class="exercise-card">@if (exercise.photoUrl) { <img [src]="exercise.photoUrl" [alt]="exercise.name"> } @else { <span class="exercise-fallback"><mat-icon>fitness_center</mat-icon></span> }<div><span>{{ exercise.muscleGroup }}</span><h2>{{ exercise.name }}</h2><p>{{ exercise.description }}</p><small>{{ exercise.musclesInvolved || 'Trabajo general' }}</small></div><mat-icon>arrow_forward</mat-icon></a> } @empty { <div class="empty-state"><mat-icon>search_off</mat-icon><h2>No encontramos ejercicios</h2></div> }</section>
     }
   </div>
 

@@ -8,11 +8,12 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Exercise } from './student.models';
 import { StudentService } from './student.service';
+import { ExerciseBodyMap } from './exercise-body-map';
 
 @Component({
   selector: 'app-exercise-detail-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule],
+  imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, ExerciseBodyMap],
   templateUrl: './exercise-detail-page.html',
   styleUrl: './exercise-detail-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -25,6 +26,7 @@ export class ExerciseDetailPage {
   readonly exercise = signal<Exercise | null>(null);
   readonly isLoading = signal(true);
   readonly feedback = signal('');
+  readonly showAnatomy = signal(false);
   readonly returnUrl = this.getReturnUrl();
 
   constructor() {

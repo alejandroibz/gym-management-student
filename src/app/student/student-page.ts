@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -18,6 +19,7 @@ import { environment } from '../../environments/environment';
 import { AchievementResponse, Exercise, ExerciseProgressHistory, HabitDefinition, HabitLog, RankingResponse, RoutineAssignment, StudentAttendance, StudentContract, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentPayment, StudentPointTransaction, StudentProgressDashboard, StudentTrainingOverview } from './student.models';
 import { StudentService } from './student.service';
 import { AvatarCropDialog } from './avatar-crop-dialog/avatar-crop-dialog';
+import { BODY_ZONES, BodyZone, ExerciseBodyMap } from './exercise-body-map';
 
 @Component({
   selector: 'app-student-page',
@@ -25,6 +27,7 @@ import { AvatarCropDialog } from './avatar-crop-dialog/avatar-crop-dialog';
   imports: [
     CommonModule, RouterLink, RouterLinkActive,
     ReactiveFormsModule,
+    MatAutocompleteModule,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
@@ -35,7 +38,8 @@ import { AvatarCropDialog } from './avatar-crop-dialog/avatar-crop-dialog';
     MatProgressBarModule,
     MatSelectModule,
     MatSnackBarModule,
-    MatTabsModule
+    MatTabsModule,
+    ExerciseBodyMap
   ],
   templateUrl: './student-page.html',
   styleUrl: './student-page.scss',
@@ -76,12 +80,38 @@ export class StudentPage {
   readonly feedback = signal('');
   readonly isLoading = signal(false);
   readonly isUploadingAvatar = signal(false);
+  readonly isEditingProfile = signal(false);
   readonly workoutWeights = signal<Record<string, number>>({});
   readonly workoutReps = signal<Record<string, number>>({});
   readonly search = this.formBuilder.nonNullable.control('');
+  readonly searchTerm = signal('');
+  readonly selectedMuscles = signal<string[]>([]);
+  readonly showExerciseAnatomy = signal(false);
+  readonly availableMuscles = computed(() => {
+    const names = new Set<string>();
+    for (const exercise of this.exercises()) {
+      for (const name of this.exerciseMuscleNames(exercise)) {
+        names.add(name);
+      }
+    }
+    return [...names].sort((a, b) => a.localeCompare(b));
+  });
+  readonly exerciseNameOptions = computed(() => {
+    const term = this.normalize(this.searchTerm());
+    return this.exercises()
+      .filter(item => !term || this.normalize(item.name).includes(term))
+      .map(item => item.name)
+      .slice(0, 8);
+  });
   readonly filteredExercises = computed(() => {
-    const term = this.search.value.trim().toLowerCase();
-    return this.exercises().filter(item => !term || `${item.name} ${item.muscleGroup} ${item.musclesInvolved ?? ''}`.toLowerCase().includes(term));
+    const term = this.normalize(this.searchTerm());
+    const selected = this.selectedMuscles().flatMap(item => this.filterTokensForMuscle(item));
+    return this.exercises().filter(item => {
+      const matchesName = !term || this.normalize(item.name).includes(term);
+      const muscleText = this.normalize(this.exerciseMuscleNames(item).join(' '));
+      const matchesMuscle = selected.length === 0 || selected.some(muscle => muscleText.includes(muscle));
+      return matchesName && matchesMuscle;
+    });
   });
   readonly unreadNotifications = computed(() => this.home()?.notifications.filter(item => !item.readAt) ?? []);
   readonly attendedToday = computed(() => {
@@ -128,6 +158,7 @@ export class StudentPage {
   constructor() {
     document.body.classList.toggle('student-dark', this.isDark());
     this.route.data.subscribe(data => this.section.set(data['section'] ?? 'home'));
+    this.search.valueChanges.subscribe(value => this.searchTerm.set(value ?? ''));
     this.loadAll();
   }
 
@@ -148,6 +179,9 @@ export class StudentPage {
           avatarUrl: dashboard.profile.avatarUrl ?? '',
           studentBio: dashboard.profile.studentBio ?? ''
         });
+        if (!this.isEditingProfile()) {
+          this.profileForm.disable({ emitEvent: false });
+        }
         this.isLoading.set(false);
       },
       error: () => {
@@ -172,9 +206,12 @@ export class StudentPage {
   }
 
   saveProfile(): void {
+    if (!this.isEditingProfile()) return;
     const raw = this.profileForm.getRawValue();
     this.service.updateProfile(raw).subscribe({
       next: () => {
+        this.isEditingProfile.set(false);
+        this.profileForm.disable({ emitEvent: false });
         this.feedback.set('Perfil actualizado.');
         this.loadAll();
       },
@@ -320,6 +357,7 @@ export class StudentPage {
   }
 
   uploadAvatar(event: Event): void {
+    if (!this.isEditingProfile()) return;
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -416,8 +454,83 @@ export class StudentPage {
     localStorage.setItem('student-theme', this.isDark() ? 'dark' : 'light');
   }
 
+  startProfileEditing(): void {
+    this.isEditingProfile.set(true);
+    this.profileForm.enable({ emitEvent: false });
+  }
+
+  cancelProfileEditing(): void {
+    const profile = this.dashboard()?.profile;
+    if (profile) {
+      this.profileForm.patchValue({
+        nombre: profile.nombre,
+        apellido: profile.apellido,
+        fechaNacimiento: profile.fechaNacimiento?.slice(0, 10) ?? '',
+        telefono: profile.telefono ?? '',
+        direccion: profile.direccion ?? '',
+        avatarUrl: profile.avatarUrl ?? '',
+        studentBio: profile.studentBio ?? ''
+      });
+    }
+    this.isEditingProfile.set(false);
+    this.profileForm.disable({ emitEvent: false });
+  }
+
+  toggleExerciseMuscle(muscle: string): void {
+    this.selectedMuscles.update(items => items.includes(muscle) ? items.filter(item => item !== muscle) : [...items, muscle]);
+  }
+
+  setExerciseMuscles(muscles: string[]): void {
+    this.selectedMuscles.set(muscles);
+  }
+
+  toggleBodyZone(zone: BodyZone): void {
+    this.toggleExerciseMuscle(zone.label);
+  }
+
+  clearExerciseFilters(): void {
+    this.search.setValue('');
+    this.searchTerm.set('');
+    this.selectedMuscles.set([]);
+  }
+
+  hasExerciseFilters(): boolean {
+    return !!this.searchTerm().trim() || this.selectedMuscles().length > 0;
+  }
+
+  exerciseFilterSummary(): string {
+    const total = this.filteredExercises().length;
+    const label = total === 1 ? 'ejercicio' : 'ejercicios';
+    if (!this.hasExerciseFilters()) return `${total} ${label} disponibles`;
+    return `${total} ${label} encontrados`;
+  }
+
+  exerciseMuscleNames(exercise: Exercise): string[] {
+    const names = new Set<string>();
+    if (exercise.muscleGroup) names.add(exercise.muscleGroup);
+    for (const muscle of exercise.muscles ?? []) {
+      if (muscle.name) names.add(muscle.name);
+      if (muscle.muscleGroupName) names.add(muscle.muscleGroupName);
+    }
+    for (const part of (exercise.musclesInvolved ?? '').split(',')) {
+      const name = part.trim();
+      if (name) names.add(name);
+    }
+    return [...names];
+  }
+
   private toast(message: string): void {
     this.snackBar.open(message, 'Cerrar', { duration: 3500 });
+  }
+
+  private normalize(value: string): string {
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  }
+
+  private filterTokensForMuscle(muscle: string): string[] {
+    const normalized = this.normalize(muscle);
+    const zone = BODY_ZONES.find(item => this.normalize(item.label) === normalized || item.synonyms.some(synonym => this.normalize(synonym) === normalized));
+    return [normalized, ...(zone?.synonyms.map(synonym => this.normalize(synonym)) ?? [])];
   }
 
   logout(): void {
