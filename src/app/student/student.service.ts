@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AchievementResponse, Exercise, ExerciseProgressHistory, HabitDefinition, HabitLog, RankingResponse, RoutineAssignment, StudentAttendance, StudentBodyMeasurement, StudentContract, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentNotification, StudentPayment, StudentPointTransaction, StudentProfile, StudentProgressDashboard, StudentTrainingOverview, WorkoutSessionPayload } from './student.models';
+import { AchievementResponse, Exercise, ExerciseProgressHistory, HabitDefinition, HabitLog, PublicContractVerification, RankingResponse, RoutineAssignment, StudentAttendance, StudentBodyMeasurement, StudentContract, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentNotification, StudentPayment, StudentPointTransaction, StudentProfile, StudentProgressDashboard, StudentTrainingOverview, WorkoutSessionPayload } from './student.models';
 
 @Injectable({ providedIn: 'root' })
 export class StudentService {
@@ -29,7 +29,10 @@ export class StudentService {
 
   getContracts():Observable<StudentContract[]>{return this.http.get<StudentContract[]>(`${this.apiUrl}/contracts/mine`)}
   getContract(id:number):Observable<StudentContract>{return this.http.get<StudentContract>(`${this.apiUrl}/contracts/${id}`)}
-  signContract(id:number,payload:{signerName:string;signerDni:string;signatureDataUrl:string;accepted:boolean}):Observable<StudentContract>{return this.http.post<StudentContract>(`${this.apiUrl}/contracts/${id}/sign`,payload)}
+  requestContractOtp(id:number):Observable<{id:number;deliveryAddressMasked:string;expiresAt:string}>{return this.http.post<{id:number;deliveryAddressMasked:string;expiresAt:string}>(`${this.apiUrl}/contracts/${id}/otp/request`,{})}
+  verifyContractOtp(id:number,code:string):Observable<{verificationToken:string;verifiedAt:string}>{return this.http.post<{verificationToken:string;verifiedAt:string}>(`${this.apiUrl}/contracts/${id}/otp/verify`,{code})}
+  verifyPublicContract(code:string):Observable<PublicContractVerification>{return this.http.get<PublicContractVerification>(`${this.apiUrl}/contracts/verify/${encodeURIComponent(code)}`)}
+  signContract(id:number,payload:{signerName:string;signerDni:string;signatureDataUrl:string;accepted:boolean;readConfirmed:boolean;readingSeconds:number;otpVerificationToken:string;signerCapacity:string}):Observable<StudentContract>{return this.http.post<StudentContract>(`${this.apiUrl}/contracts/${id}/sign`,payload)}
   downloadContract(id:number):Observable<Blob>{return this.http.get(`${this.apiUrl}/contracts/${id}/pdf`,{responseType:'blob'})}
 
   getTrainingOverview(): Observable<StudentTrainingOverview> {
@@ -55,7 +58,7 @@ export class StudentService {
     return this.http.get<StudentProgressDashboard>(`${this.apiUrl}/Student/progress`, { params });
   }
 
-  saveBodyMeasurement(payload: { weightKg: number; measuredAt: string; notes?: string | null }): Observable<StudentBodyMeasurement> {
+  saveBodyMeasurement(payload: { weightKg: number; heightCm?: number | null; measuredAt: string; notes?: string | null }): Observable<StudentBodyMeasurement> {
     return this.http.post<StudentBodyMeasurement>(`${this.apiUrl}/Student/body-measurements`, payload);
   }
 

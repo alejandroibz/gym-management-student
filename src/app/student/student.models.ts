@@ -92,6 +92,14 @@ export interface RoutineAssignment {
     restSeconds?: number | null;
     notes?: string | null;
   }>;
+  blocks: Array<{
+    id: number;
+    name: string;
+    sortOrder: number;
+    cycles: number;
+    notes?: string | null;
+    exercises: RoutineAssignment['exercises'];
+  }>;
 }
 
 export interface HabitLog {
@@ -193,6 +201,7 @@ export interface StudentPointTransaction {
 export interface StudentBodyMeasurement {
   id: number;
   weightKg: number;
+  heightCm?: number | null;
   measuredAt: string;
   source: string;
   isVerified: boolean;
@@ -219,6 +228,8 @@ export interface StudentGoal {
 
 export interface StudentProgressDashboard {
   currentWeightKg?: number | null;
+  currentHeightCm?: number | null;
+  currentBmi?: number | null;
   weightDeltaKg?: number | null;
   attendanceCount: number;
   workoutCount: number;
@@ -286,6 +297,9 @@ export interface WorkoutSessionPayload {
   notes?: string | null;
   exercises: Array<{
     exerciseId: number;
+    routineBlockId?: number | null;
+    routineExerciseId?: number | null;
+    cycleNumber?: number | null;
     sortOrder: number;
     notes?: string | null;
     sets: Array<{
@@ -300,3 +314,4 @@ export interface WorkoutSessionPayload {
 
 export interface StudentContractClause { sortOrder:number; title:string; body:string; }
 export interface StudentContract { id:number; clientId:number; clientName:string; clientDni?:string|null; templateVersion:number; templateName:string; status:string; signatureMethod?:string|null; issuedAt:string; signedAt?:string|null; signedByName?:string|null; acceptanceText:string; snapshot:{clientName:string;clientDni:string;branchName:string;branchAddress:string;membershipName:string;membershipPeriod:string;issuedAt:string;clauses:StudentContractClause[]};documents:Array<{id:number;documentType:string;fileName:string;uploadedAt:string}>; }
+export interface PublicContractVerification { isValid:boolean;status:string;contractReference:string;templateName:string;templateVersion:number;clientNameMasked:string;signedAt?:string|null;signatureMethod?:string|null;documentSha256?:string|null;verificationCode:string; }

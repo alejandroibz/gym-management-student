@@ -139,6 +139,7 @@ export class StudentPage {
 
   readonly weightForm = this.formBuilder.nonNullable.group({
     weightKg: [70, [Validators.required, Validators.min(20), Validators.max(400)]],
+    heightCm: [170, [Validators.required, Validators.min(80), Validators.max(250)]],
     measuredAt: [new Date().toISOString().slice(0, 10)],
     notes: ['']
   });
@@ -328,8 +329,8 @@ export class StudentPage {
   saveWeight(): void {
     if (this.weightForm.invalid) return;
     this.service.saveBodyMeasurement(this.weightForm.getRawValue()).subscribe({
-      next: () => { this.actionPanel.set(null); this.toast('Peso registrado.'); this.service.getProgress().subscribe(item => this.progress.set(item)); },
-      error: () => this.toast('No pudimos registrar el peso.')
+      next: () => { this.actionPanel.set(null); this.toast('Medición registrada.'); this.service.getProgress().subscribe(item => this.progress.set(item)); },
+      error: () => this.toast('No pudimos registrar la medición.')
     });
   }
 

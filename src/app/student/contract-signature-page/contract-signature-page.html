@@ -1,1 +1,79 @@
-<main class="contract-sign"><header><a mat-button routerLink="/perfil"><mat-icon>close</mat-icon>Salir</a><span>CONTRATO DIGITAL</span></header>@if(contract();as item){<section class="document"><span class="eyebrow">VERSIÓN {{item.templateVersion}}</span><h1>{{item.templateName}}</h1><div class="identity"><strong>{{item.snapshot.clientName}}</strong><span>DNI {{item.snapshot.clientDni}}</span><small>{{item.snapshot.membershipName}} · {{item.snapshot.membershipPeriod}}</small></div>@for(clause of item.snapshot.clauses;track clause.sortOrder){<article><h2>{{clause.title}}</h2><p>{{clause.body}}</p></article>}<p class="acceptance">{{item.acceptanceText}}</p><button mat-stroked-button type="button" (click)="readComplete.set(true)"><mat-icon>done</mat-icon>Leí el documento completo</button></section>@if(readComplete()){<form [formGroup]="form" (ngSubmit)="submit()"><h2>Confirmá y firmá</h2><div class="fields"><mat-form-field appearance="outline"><mat-label>Nombre completo</mat-label><input matInput formControlName="signerName"></mat-form-field><mat-form-field appearance="outline"><mat-label>DNI</mat-label><input matInput formControlName="signerDni"></mat-form-field></div><div class="canvas-head"><span>Firma dentro del recuadro</span><button mat-button type="button" (click)="clear()">Limpiar</button></div><canvas #canvas (pointerdown)="start($event)" (pointermove)="move($event)" (pointerup)="stop()" (pointercancel)="stop()"></canvas><mat-checkbox formControlName="accepted">Acepto los términos de manera libre y voluntaria.</mat-checkbox>@if(error()){<p class="error">{{error()}}</p>}<button mat-flat-button type="submit" [disabled]="form.invalid||!signed()||saving()">{{saving()?'Guardando...':'Firmar contrato'}}</button></form>}}@else{<p>Cargando...</p>}</main>
+<main class="contract-sign">
+  <header class="page-header">
+    <div class="header-mark"><mat-icon>description</mat-icon></div>
+    <div class="header-copy">
+      <span class="eyebrow">DOCUMENTACIÓN LEGAL</span>
+      <h1>Contrato digital</h1>
+      <p>Lectura, aceptación y firma segura de tu documentación.</p>
+    </div>
+    <button mat-icon-button type="button" (click)="toggleTheme()" [attr.aria-label]="isDark() ? 'Usar modo claro' : 'Usar modo nocturno'">
+      <mat-icon>{{isDark() ? 'light_mode' : 'dark_mode'}}</mat-icon>
+    </button>
+    @if(!required()){
+      <a mat-icon-button routerLink="/perfil" aria-label="Salir"><mat-icon>close</mat-icon></a>
+    }
+  </header>
+
+  @if(required()){
+    <section class="required-notice">
+      <mat-icon>gavel</mat-icon>
+      <div>
+        <strong>Para continuar, debés leer y firmar tu contrato</strong>
+        <p>Tu acceso a la plataforma se habilitará automáticamente cuando completes la lectura, aceptación y firma digital.</p>
+      </div>
+    </section>
+  }
+
+  @if(contract();as item){
+    <section class="document">
+      <div class="document-heading">
+        <span class="eyebrow">VERSIÓN {{item.templateVersion}}</span>
+        <h2>{{item.templateName}}</h2>
+      </div>
+      <div class="identity">
+        <span class="identity-icon"><mat-icon>person</mat-icon></span>
+        <div><strong>{{item.snapshot.clientName}}</strong><span>DNI {{item.snapshot.clientDni}}</span><small>{{item.snapshot.membershipName}} · {{item.snapshot.membershipPeriod}}</small></div>
+      </div>
+      <div class="clauses">
+        @for(clause of item.snapshot.clauses;track clause.sortOrder){
+          <article><h3>{{clause.title}}</h3><p>{{clause.body}}</p></article>
+        }
+      </div>
+    </section>
+
+    <section class="acceptance-card" [class.confirmed]="readComplete()">
+      <div class="acceptance-title"><mat-icon>{{readComplete() ? 'verified' : 'fact_check'}}</mat-icon><h2>Declaración de lectura y aceptación</h2></div>
+      <p>{{item.acceptanceText}}</p>
+      <button mat-stroked-button type="button" (click)="confirmRead()" [disabled]="readComplete()">
+        <mat-icon>done</mat-icon>{{readComplete()?'Lectura confirmada':'Leí y comprendí el documento completo'}}
+      </button>
+    </section>
+
+    @if(readComplete()){
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div><span class="eyebrow">ÚLTIMO PASO</span><h2>Confirmá tu identidad y firmá</h2><p class="form-help">La firma quedará vinculada a esta versión exacta del contrato, junto con la fecha y la evidencia de aceptación.</p></div>
+        <div class="fields">
+          <mat-form-field appearance="outline"><mat-label>Nombre completo</mat-label><input matInput formControlName="signerName"></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>DNI</mat-label><input matInput formControlName="signerDni"></mat-form-field>
+        </div>
+        <div class="canvas-head"><span>Firmá dentro del recuadro</span><button mat-button type="button" (click)="clear()">Limpiar</button></div>
+        <canvas #canvas (pointerdown)="start($event)" (pointermove)="move($event)" (pointerup)="stop()" (pointerleave)="stop()" (pointercancel)="stop()"></canvas>
+        <mat-checkbox formControlName="accepted">Acepto los términos de manera libre y voluntaria y confirmo que esta firma es mía.</mat-checkbox>
+        <section class="otp-card" [class.verified]="otpVerified()">
+          <div class="otp-heading"><mat-icon>{{otpVerified()?'mark_email_read':'verified_user'}}</mat-icon><div><strong>Verificación por correo</strong><p>{{otpVerified()?'Tu correo fue verificado para esta firma.':'Te enviaremos un código de 6 dígitos al correo registrado.'}}</p></div></div>
+          @if(!otpSent()){
+            <button mat-stroked-button type="button" (click)="requestOtp()" [disabled]="otpSending()">{{otpSending()?'Enviando código…':'Enviar código por correo'}}</button>
+          } @else if(!otpVerified()) {
+            <p class="otp-destination">Código enviado a <strong>{{otpDestination()}}</strong>. Vence a las {{otpExpiresAt()|date:'HH:mm':'UTC'}} UTC.</p>
+            <div class="otp-entry"><mat-form-field appearance="outline"><mat-label>Código de 6 dígitos</mat-label><input matInput formControlName="otpCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></mat-form-field><button mat-flat-button type="button" (click)="verifyOtp()" [disabled]="form.controls.otpCode.invalid||otpVerifying()">{{otpVerifying()?'Validando…':'Validar código'}}</button></div>
+            <button mat-button type="button" (click)="requestOtp()" [disabled]="otpSending()">Reenviar código</button>
+          }
+        </section>
+        @if(error()){<p class="error">{{error()}}</p>}
+        <button mat-flat-button type="submit" [disabled]="!form.controls.signerName.valid||!form.controls.signerDni.valid||!form.controls.accepted.valid||!signed()||!otpVerified()||saving()">{{saving()?'Guardando firma...':'Firmar y continuar'}}</button>
+      </form>
+    }
+  } @else {
+    <p class="loading">Cargando contrato...</p>
+  }
+</main>
