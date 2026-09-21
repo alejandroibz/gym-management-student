@@ -4,3 +4,18 @@
 .circuit-set{overflow:visible}.active-set-card{align-items:end;display:grid;gap:.75rem;grid-template-columns:52px 1fr 1fr;padding:1rem}.active-set-number{align-items:center;background:var(--student-accent);border-radius:12px;color:#fff;display:flex;font-size:1.35rem;font-weight:900;height:52px;justify-content:center;width:52px}.active-set-card label{display:grid;gap:.35rem}.active-set-card label>span{color:var(--student-muted);font-size:.7rem;font-weight:800;text-transform:uppercase}.active-set-card label>div{align-items:center;background:var(--student-surface-muted);border:1px solid var(--student-border);border-radius:9px;display:flex;height:52px;padding:0 .7rem}.active-set-card input{background:transparent;border:0;color:var(--student-text);font-size:1.25rem;font-weight:900;min-width:0;outline:0;width:100%}.active-set-card em{color:var(--student-muted);font-style:normal}.circuit-hint{align-items:center;background:var(--student-accent-soft);color:var(--student-muted);display:flex;font-size:.8rem;gap:.5rem;margin:0;padding:.7rem 1rem}.circuit-hint mat-icon{color:var(--student-accent);flex:0 0 auto}.add-set-inline{margin:.5rem 1rem}
 .exercise-progress{background:var(--student-surface);border-bottom:1px solid var(--student-border);padding:.65rem 1rem}.exercise-progress-label{color:var(--student-muted);display:block;font-size:.65rem;font-weight:900;letter-spacing:.08em;margin-bottom:.45rem;text-transform:uppercase}.exercise-progress>div{display:flex;gap:.45rem;overflow-x:auto;padding-bottom:.15rem;scrollbar-width:thin}.exercise-progress button{align-items:center;background:var(--student-surface-muted);border:1px solid var(--student-border);border-radius:9px;color:var(--student-text);display:flex;flex:0 0 auto;gap:.45rem;max-width:230px;padding:.45rem .65rem;text-align:left}.exercise-progress button>span{align-items:center;background:var(--student-surface);border-radius:50%;display:flex;flex:0 0 auto;font-size:.68rem;font-weight:900;height:24px;justify-content:center;width:24px}.exercise-progress button>strong{font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.exercise-progress button.active{background:var(--student-accent-soft);border-color:var(--student-accent)}.exercise-progress button.done>span{background:#1b9b5c;color:#fff}
 @media(max-width:560px){.active-set-card{grid-template-columns:42px 1fr 1fr;padding:.75rem}.active-set-number{height:42px;width:42px}.active-set-card label>div{height:48px}.session-page>footer button:last-child{flex:1}}
+
+.session-help { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.6rem; padding:.8rem 1rem; background:var(--student-accent-soft); }
+.session-help>span { color:var(--student-muted); font-size:.8rem; }
+.session-help button { min-height:44px; }
+.session-help p { flex-basis:100%; margin:0; color:var(--student-text); }
+.session-page { padding-bottom:200px; }
+.session-page>footer { flex-direction:column; gap:.6rem; padding-bottom:max(.8rem, env(safe-area-inset-bottom)); }
+.session-action-hint { display:grid; gap:.2rem; font-size:.8rem; line-height:1.4; overflow-wrap:anywhere; }
+.session-action-hint small { color:var(--student-muted); }
+.session-action-buttons { display:flex; gap:.7rem; align-items:stretch; }
+.session-action-buttons button:last-child { flex:1; white-space:normal; line-height:1.3; height:auto; min-height:48px; padding:.6rem .8rem; }
+@media(max-width:380px) {
+  .session-action-buttons { flex-direction:column-reverse; gap:.3rem; }
+  .session-page { padding-bottom:260px; }
+}

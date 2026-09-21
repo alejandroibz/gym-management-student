@@ -1,8 +1,15 @@
 <main class="session-page">
   <header><a mat-icon-button routerLink="/entrenar" aria-label="Salir"><mat-icon>close</mat-icon></a><div><span>{{ workout()?.name || 'Workout' }}</span><mat-progress-bar mode="determinate" [value]="progress()" /><small>{{ completedSets() }} de {{ totalSets() }} series</small></div><button class="session-map-toggle" type="button" (click)="showOutline.update(value=>!value)" [attr.aria-expanded]="showOutline()"><mat-icon>{{showOutline()?'expand_less':'format_list_bulleted'}}</mat-icon><small>{{ currentIndex()+1 }}/{{ steps().length }}</small></button></header>
+  @if (currentStep()) {
+    <section class="session-help" aria-label="Ayuda para entrenar">
+      <span>¿Primera vez registrando tu entrenamiento?</span>
+      <button mat-stroked-button type="button" data-tour="help" (click)="startTour()" [disabled]="tourLoading() || isSaving()"><mat-icon>help_outline</mat-icon>{{ tourLoading() ? 'Abriendo guía…' : 'Cómo entrenar' }}</button>
+      @if (tourError()) { <p role="alert">{{ tourError() }}</p> }
+    </section>
+  }
   @if (feedback()) { <p class="feedback">{{ feedback() }}</p> }
   @if(showOutline() && workout()){
-    <section class="workout-outline">
+    <section class="workout-outline" data-tour="outline">
       <div class="outline-title"><div><span>MAPA DEL WORKOUT</span><h2>Bloques y ejercicios</h2></div><button mat-icon-button type="button" (click)="showOutline.set(false)" aria-label="Ocultar mapa"><mat-icon>close</mat-icon></button></div>
       <div class="outline-blocks">
         @for(block of outline();track block.id){
@@ -24,14 +31,14 @@
   @if (currentStep(); as step) {
     <nav class="block-progress" aria-label="Progreso por bloques">@for (item of steps(); track item.blockId + '-' + item.cycle + '-' + item.exercise.id; let i=$index) {@if(i===0 || steps()[i-1].blockId!==item.blockId || steps()[i-1].cycle!==item.cycle){<button type="button" [class.active]="step.blockId===item.blockId && step.cycle===item.cycle" [class.done]="completedCycles().has((item.blockId)+'-'+item.cycle)" (click)="goToStep(i)"><mat-icon>{{ completedCycles().has((item.blockId)+'-'+item.cycle)?'check_circle':'sync' }}</mat-icon><span><strong>{{ item.blockName }}</strong><small>{{cycleProgress(item).done}} de {{cycleProgress(item).total}} series</small></span></button>}}</nav>
     <nav class="exercise-progress" aria-label="Ejercicios del bloque"><span class="exercise-progress-label">Ejercicios de la vuelta {{activeSet()}}</span><div>@for(item of activeBlockSteps();track item.step.exercise.id;let position=$index){<button type="button" [class.active]="item.index===currentIndex()" [class.done]="exerciseDoneInCurrentRound(item.step)" (click)="goToStep(item.index)"><span>{{exerciseDoneInCurrentRound(item.step)?'✓':position+1}}</span><strong>{{item.step.exercise.exerciseName}}</strong></button>}</div></nav>
-    <section class="cycle-heading"><span>BLOQUE {{ step.blockOrder }}</span><strong>{{ step.blockName }}</strong><em>Vuelta {{ activeSet() }} de {{ blockRoundTotal(step) }}</em></section>
+    <section class="cycle-heading" data-tour="round"><span>BLOQUE {{ step.blockOrder }}</span><strong>{{ step.blockName }}</strong><em>Vuelta {{ activeSet() }} de {{ blockRoundTotal(step) }}</em></section>
     @if (currentExercise(); as exercise) {
-      <section class="exercise-hero">@if(currentMedia()?.photoUrl){<img [src]="currentMedia()?.photoUrl" [alt]="exercise.exerciseName">}@else{<div class="fallback"><mat-icon>fitness_center</mat-icon></div>}<div><span>{{ exercise.muscleGroup }}</span><h1>{{ exercise.exerciseName }}</h1><p>{{ exercise.notes || 'Concentrate en una técnica controlada y cómoda.' }}</p>@if(currentMedia()?.qrSlug){<a mat-button [routerLink]="['/ejercicios',currentMedia()?.qrSlug]" [queryParams]="{returnUrl:'/entrenar/'+assignmentId}">Ver técnica <mat-icon>open_in_new</mat-icon></a>}</div></section>
+      <section class="exercise-hero" data-tour="technique">@if(currentMedia()?.photoUrl){<img [src]="currentMedia()?.photoUrl" [alt]="exercise.exerciseName">}@else{<div class="fallback"><mat-icon>fitness_center</mat-icon></div>}<div><span>{{ exercise.muscleGroup }}</span><h1>{{ exercise.exerciseName }}</h1><p>{{ exercise.notes || 'Concentrate en una técnica controlada y cómoda.' }}</p>@if(currentMedia()?.qrSlug){<a mat-button [routerLink]="['/ejercicios',currentMedia()?.qrSlug]" [queryParams]="{returnUrl:'/entrenar/'+assignmentId}">Ver técnica <mat-icon>open_in_new</mat-icon></a>}</div></section>
       @if(previous();as last){<div class="previous-box"><mat-icon>history</mat-icon><span><strong>Último registro: {{ last.bestWeight || 0 }} kg</strong><small>Usalo como referencia, no como obligación.</small></span></div>}
       <section class="sets circuit-set">
-        <div class="sets-title"><div><span>VUELTA</span><strong>{{activeSet()}} de {{blockRoundTotal(step)}}</strong></div><button mat-button type="button" (click)="showAllSets.update(value=>!value)">{{showAllSets()?'Ocultar series':'Ver todas las series'}}<mat-icon>{{showAllSets()?'expand_less':'expand_more'}}</mat-icon></button></div>
+        <div class="sets-title" data-tour="sets"><div><span>VUELTA</span><strong>{{activeSet()}} de {{blockRoundTotal(step)}}</strong></div><button mat-button type="button" (click)="showAllSets.update(value=>!value)">{{showAllSets()?'Ocultar series':'Ver todas las series'}}<mat-icon>{{showAllSets()?'expand_less':'expand_more'}}</mat-icon></button></div>
         @if(!showAllSets()){
-          <div class="active-set-card"><span class="active-set-number">{{activeSet()}}</span><label><span>Peso</span><div><input inputmode="decimal" type="number" [value]="value(step,activeSet()).weight" (input)="update(step,activeSet(),'weight',$event)"><em>kg</em></div></label><label><span>Repeticiones</span><div><input inputmode="numeric" type="number" [value]="value(step,activeSet()).reps" (input)="update(step,activeSet(),'reps',$event)"></div></label></div>
+          <div class="active-set-card" data-tour="values"><span class="active-set-number">{{activeSet()}}</span><label><span>Peso</span><div><input inputmode="decimal" type="number" [value]="value(step,activeSet()).weight" (input)="update(step,activeSet(),'weight',$event)"><em>kg</em></div></label><label><span>Repeticiones</span><div><input inputmode="numeric" type="number" [value]="value(step,activeSet()).reps" (input)="update(step,activeSet(),'reps',$event)"></div></label></div>
           <p class="circuit-hint"><mat-icon>sync</mat-icon>Al completar, seguís con el próximo ejercicio del bloque. Después comienza la siguiente vuelta.</p>
         } @else {
           <div class="sets-head"><span>Serie</span><span>Peso</span><span>Reps</span><span>Hecha</span><span></span></div>@for(set of setNumbers(setCount(step));track set){<div class="set-row" [class.done]="value(step,set).done"><strong>{{ set }}</strong><label><input inputmode="decimal" type="number" [value]="value(step,set).weight" (input)="update(step,set,'weight',$event)"><span>kg</span></label><label><input inputmode="numeric" type="number" [value]="value(step,set).reps" (input)="update(step,set,'reps',$event)"></label><button type="button" (click)="toggleDone(step,set)"><mat-icon>{{ value(step,set).done?'check':'radio_button_unchecked' }}</mat-icon></button><button type="button" class="remove-set" (click)="removeSet(step,set)" [disabled]="setCount(step)<=1"><mat-icon>delete_outline</mat-icon></button></div>}
@@ -40,7 +47,19 @@
       </section>
     }
     @if(restRemaining()>0){<aside class="rest-timer"><span>DESCANSO</span><strong>{{ restRemaining() }}s</strong><button mat-button type="button" (click)="skipRest()">Omitir</button></aside>}
-    @if(currentIndex()===steps().length-1){<label class="session-note"><span>¿Cómo te sentiste?</span><textarea rows="3" [value]="sessionNote()" (input)="sessionNote.set($any($event.target).value)" placeholder="Dolor, dificultad u observaciones para tu profesor o kinesiólogo"></textarea></label>}
-    <footer><button mat-stroked-button type="button" (click)="previousExercise()" [disabled]="currentIndex()===0"><mat-icon>arrow_back</mat-icon>Anterior</button>@if(completedSets()<totalSets()){<button mat-flat-button type="button" (click)="completeAndContinue()"><mat-icon>check</mat-icon>Completar y seguir</button>}@else{<button mat-flat-button type="button" (click)="finish()" [disabled]="isSaving()"><mat-icon>flag</mat-icon>Finalizar</button>}</footer>
+    @if(currentIndex()===steps().length-1 || primaryAction().nextIndex === null){<label class="session-note"><span>¿Cómo te sentiste?</span><textarea rows="3" [value]="sessionNote()" (input)="sessionNote.set($any($event.target).value)" placeholder="Dolor, dificultad u observaciones para tu profesor o kinesiólogo"></textarea></label>}
+    <footer data-tour="continue">
+      <div class="session-action-hint" id="session-action-hint" aria-live="polite">
+        <span>{{ primaryAction().hint }}</span>
+        @if (primaryAction().nextHint) { <small>{{ primaryAction().nextHint }}</small> }
+      </div>
+      <div class="session-action-buttons">
+        <button mat-stroked-button type="button" (click)="previousExercise()" [disabled]="currentIndex()===0 || isSaving()"><mat-icon>arrow_back</mat-icon>Anterior</button>
+        <button mat-flat-button type="button" (click)="completeAndContinue()" [disabled]="isSaving()" aria-describedby="session-action-hint">
+          <mat-icon>{{ primaryAction().nextIndex === null ? 'flag' : 'check' }}</mat-icon>
+          {{ isSaving() ? 'Guardando…' : primaryAction().label }}
+        </button>
+      </div>
+    </footer>
   }
 </main>

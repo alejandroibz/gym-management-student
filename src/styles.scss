@@ -52,3 +52,21 @@ body.student-dark .mdc-notched-outline__notch,
 body.student-dark .mdc-notched-outline__trailing { border-color: var(--student-border) !important; }
 .mat-mdc-snack-bar-container { --mdc-snackbar-container-color: #171719; --mdc-snackbar-supporting-text-color: #fff; }
 .mat-mdc-unelevated-button { min-height: 44px; }
+
+.driver-popover.student-workout-tour {
+  background:var(--student-surface); color:var(--student-text); border-radius:16px;
+  padding:20px; max-width:min(340px, calc(100vw - 24px));
+  font-family:var(--student-font-body);
+  .driver-popover-title { font-family:var(--student-font-display); font-size:18px; }
+  .driver-popover-description { font-size:14px; line-height:1.6; }
+  .driver-popover-progress-text { color:var(--student-muted); font-size:12px; }
+  .driver-popover-close-btn { color:var(--student-muted); width:44px; height:44px; }
+  .driver-popover-navigation-btns { gap:6px; }
+  .driver-popover-navigation-btns button { min-height:44px; border-radius:8px; padding:8px 12px; text-shadow:none; font-size:13px; background:var(--student-surface); color:var(--student-text); border:1px solid var(--student-border); }
+  .driver-popover-navigation-btns .driver-popover-next-btn { background:var(--student-accent); color:#fff; border-color:var(--student-accent); }
+  button:focus-visible { outline:3px solid var(--student-accent); outline-offset:2px; }
+  .driver-popover-arrow-side-left { border-left-color:var(--student-surface); }
+  .driver-popover-arrow-side-right { border-right-color:var(--student-surface); }
+  .driver-popover-arrow-side-top { border-top-color:var(--student-surface); }
+  .driver-popover-arrow-side-bottom { border-bottom-color:var(--student-surface); }
+}
