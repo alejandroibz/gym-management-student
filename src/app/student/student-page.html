@@ -192,7 +192,10 @@
           </div>
         }
       </section>
-      <section class="exercise-grid">@for (exercise of filteredExercises(); track exercise.id) { <a [routerLink]="['/ejercicios', exercise.qrSlug || exercise.id]" class="exercise-card">@if (exercise.photoUrl) { <img [src]="exercise.photoUrl" [alt]="exercise.name"> } @else { <span class="exercise-fallback"><mat-icon>fitness_center</mat-icon></span> }<div><span>{{ exercise.muscleGroup }}</span><h2>{{ exercise.name }}</h2><p>{{ exercise.description }}</p><small>{{ exercise.musclesInvolved || 'Trabajo general' }}</small></div><mat-icon>arrow_forward</mat-icon></a> } @empty { <div class="empty-state"><mat-icon>search_off</mat-icon><h2>No encontramos ejercicios</h2></div> }</section>
+      <section class="exercise-grid">@for (exercise of filteredExercises(); track exercise.id) { <article class="exercise-card">
+        <app-exercise-media [exercise]="exercise" />
+        <a class="exercise-info" [routerLink]="['/ejercicios', exercise.qrSlug || exercise.id]"><div><span>{{ exercise.muscleGroup }}</span><h2>{{ exercise.name }}</h2><p>{{ exercise.description }}</p><small>{{ exercise.musclesInvolved || 'Trabajo general' }}</small></div><mat-icon>arrow_forward</mat-icon></a>
+      </article> } @empty { <div class="empty-state"><mat-icon>search_off</mat-icon><h2>No encontramos ejercicios</h2></div> }</section>
     }
   </div>
 

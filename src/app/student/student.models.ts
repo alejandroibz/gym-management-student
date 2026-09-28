@@ -278,6 +278,7 @@ export interface RankingResponse {
 }
 
 export interface Exercise {
+  media?: Array<{ mediaType: string; url: string }>;
   id: number;
   name: string;
   description: string;

@@ -1,6 +1,6 @@
+import { ExerciseMedia } from './exercise-media';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,7 +13,7 @@ import { ExerciseBodyMap } from './exercise-body-map';
 @Component({
   selector: 'app-exercise-detail-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, ExerciseBodyMap],
+  imports: [CommonModule, ExerciseMedia, RouterLink, MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, ExerciseBodyMap],
   templateUrl: './exercise-detail-page.html',
   styleUrl: './exercise-detail-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -21,7 +21,6 @@ import { ExerciseBodyMap } from './exercise-body-map';
 export class ExerciseDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(StudentService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   readonly exercise = signal<Exercise | null>(null);
   readonly isLoading = signal(true);
@@ -42,13 +41,6 @@ export class ExerciseDetailPage {
         this.isLoading.set(false);
       }
     });
-  }
-
-  getYoutubeEmbedUrl(url: string | null | undefined): SafeResourceUrl | null {
-    if (!url) return null;
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{6,})/);
-    if (!match) return null;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(`https://www.youtube.com/embed/${match[1]}`);
   }
 
   private getReturnUrl(): string {

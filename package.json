@@ -6,7 +6,8 @@
     "start": "ng serve --host 127.0.0.1 --port 4301",
     "build": "ng build",
     "deploy:github": "ng build --configuration production --base-href / && ngh --dir=dist/gym-management-student/browser --cname=app.simbiosisgym.com.ar",
-    "watch": "ng build --watch --configuration development"
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test"
   },
   "packageManager": "npm@11.8.0",
   "dependencies": {
@@ -28,6 +29,8 @@
     "@angular/cli": "^21.2.7",
     "@angular/compiler-cli": "^21.2.0",
     "angular-cli-ghpages": "^3.0.3",
-    "typescript": "~5.9.2"
+    "jsdom": "^28.1.0",
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.11"
   }
 }

@@ -1,3 +1,4 @@
+import { ExerciseMedia } from './exercise-media';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -25,7 +26,7 @@ import { BODY_ZONES, BodyZone, ExerciseBodyMap } from './exercise-body-map';
   selector: 'app-student-page',
   standalone: true,
   imports: [
-    CommonModule, RouterLink, RouterLinkActive,
+    CommonModule, RouterLink, RouterLinkActive, ExerciseMedia,
     ReactiveFormsModule,
     MatAutocompleteModule,
     MatButtonModule,

@@ -19,3 +19,5 @@
   .session-action-buttons { flex-direction:column-reverse; gap:.3rem; }
   .session-page { padding-bottom:260px; }
 }
+.exercise-hero { grid-template-columns: minmax(0, 1fr); }
+.exercise-hero app-exercise-media { width: 100%; }

@@ -76,3 +76,10 @@
 :host-context(body.student-dark) .quick-icon.green { background: rgba(38,166,91,.14); color: #71d69b; }
 :host-context(body.student-dark) .quick-icon.blue { background: rgba(66,153,225,.14); color: #82bdf1; }
 :host-context(body.student-dark) .quick-icon.amber { background: rgba(232,180,35,.14); color: #f0ca62; }
+
+.exercise-card { display: flex; flex-direction: column; align-items: stretch; }
+.exercise-card app-exercise-media { width: 100%; }
+.exercise-info { display: flex; align-items: center; gap: .5rem; padding: .8rem; color: inherit; text-decoration: none; flex: 1; }
+.exercise-info div { flex: 1; min-width: 0; }
+.exercise-info div>span { color: var(--student-accent); font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+.exercise-info:focus-visible { outline: 2px solid var(--student-accent); outline-offset: -2px; }

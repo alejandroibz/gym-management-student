@@ -1,3 +1,4 @@
+import { ExerciseMedia } from './exercise-media';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ChangeDetectorRef, DestroyRef, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +15,7 @@ interface SetDraft { reps: number | null; weight: number | null; done: boolean; 
 interface SessionStep { blockId: number | null; blockName: string; blockOrder: number; cycle: number; cycles: number; exercise: RoutineAssignment['exercises'][number]; }
 interface WorkoutOutlineBlock { id:number|null; name:string; sortOrder:number; cycles:number; notes?:string|null; exercises:RoutineAssignment['exercises']; }
 
-@Component({ selector:'app-workout-session-page', standalone:true, imports:[CommonModule,RouterLink,MatButtonModule,MatIconModule,MatProgressBarModule], templateUrl:'./workout-session-page.html', styleUrl:'./workout-session-page.scss', changeDetection:ChangeDetectionStrategy.OnPush })
+@Component({ selector:'app-workout-session-page', standalone:true, imports:[CommonModule, ExerciseMedia,RouterLink,MatButtonModule,MatIconModule,MatProgressBarModule], templateUrl:'./workout-session-page.html', styleUrl:'./workout-session-page.scss', changeDetection:ChangeDetectionStrategy.OnPush })
 export class WorkoutSessionPage {
   private readonly service=inject(StudentService); private readonly route=inject(ActivatedRoute); private readonly router=inject(Router);
   readonly workout=signal<RoutineAssignment|null>(null); readonly exercises=signal<Exercise[]>([]); readonly currentIndex=signal(0); readonly draft=signal<Record<string,SetDraft>>({}); readonly setCounts=signal<Record<string,number>>({});
