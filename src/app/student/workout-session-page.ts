@@ -1,3 +1,4 @@
+import { StudentThemeService } from '../core/student-theme.service';
 import { ExerciseMedia } from './exercise-media';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ChangeDetectorRef, DestroyRef, computed, inject, signal } from '@angular/core';
@@ -5,9 +6,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Exercise, ExerciseProgressHistory, RoutineAssignment } from './student.models';
+import { Exercise, ExerciseProgressHistory, ExerciseObservation, RoutineAssignment } from './student.models';
 import { StudentService } from './student.service';
 
+import { from, concatMap, tap, toArray, switchMap } from 'rxjs';
 import type { Driver, DriveStep } from 'driver.js';
 import { workoutAction } from './workout-navigation';
 
@@ -17,6 +19,9 @@ interface WorkoutOutlineBlock { id:number|null; name:string; sortOrder:number; c
 
 @Component({ selector:'app-workout-session-page', standalone:true, imports:[CommonModule, ExerciseMedia,RouterLink,MatButtonModule,MatIconModule,MatProgressBarModule], templateUrl:'./workout-session-page.html', styleUrl:'./workout-session-page.scss', changeDetection:ChangeDetectionStrategy.OnPush })
 export class WorkoutSessionPage {
+  private readonly theme = inject(StudentThemeService);
+  readonly isDark = this.theme.isDark;
+  toggleTheme(): void { this.theme.toggle(); }
   private readonly service=inject(StudentService); private readonly route=inject(ActivatedRoute); private readonly router=inject(Router);
   readonly workout=signal<RoutineAssignment|null>(null); readonly exercises=signal<Exercise[]>([]); readonly currentIndex=signal(0); readonly draft=signal<Record<string,SetDraft>>({}); readonly setCounts=signal<Record<string,number>>({});
   readonly previous=signal<ExerciseProgressHistory|null>(null); readonly restRemaining=signal(0); readonly isSaving=signal(false); readonly feedback=signal(''); readonly sessionNote=signal('');
@@ -26,6 +31,78 @@ export class WorkoutSessionPage {
   readonly tourLoading = signal(false);
   readonly tourError = signal('');
   readonly showOutline=signal(true);
+  readonly observationDrafts = signal<Record<number, string>>({});
+  readonly observationFeedback = signal<Record<number, string>>({});
+  readonly savingObservation = signal(false);
+  private progressRequestVersion = 0;
+  readonly observationOpen = signal<Record<number, boolean>>({});
+  readonly observationEditing = signal<Record<number, number>>({});
+  readonly savedObservations = signal<Record<number, ExerciseObservation>>({});
+  readonly latestStudentObservation = computed(() => {
+    const id = this.currentExercise()?.exerciseId;
+    return id ? this.savedObservations()[id] ?? this.previous()?.observations?.find(note => note.isStudentAuthor && !note.isSuperseded) : undefined;
+  });
+
+  toggleObservation(exerciseId: number): void {
+    this.observationOpen.update(items => ({ ...items, [exerciseId]: !items[exerciseId] }));
+  }
+
+  editPreviousObservation(exerciseId: number): void {
+    const note = this.latestStudentObservation();
+    if (!note || this.savingObservation() || this.isSaving()) return;
+    this.observationEditing.update(items => ({ ...items, [exerciseId]: note.id }));
+    this.observationDrafts.update(items => ({ ...items, [exerciseId]: note.text }));
+    this.persist();
+  }
+
+  cancelObservationEdit(exerciseId: number): void {
+    this.observationEditing.update(items => ({ ...items, [exerciseId]: 0 }));
+    this.observationDrafts.update(items => ({ ...items, [exerciseId]: '' }));
+    this.persist();
+  }
+
+  private writeObservation(exerciseId: number, text: string) {
+    const id = this.observationEditing()[exerciseId];
+    return id ? this.service.editExerciseObservation(exerciseId, id, text) : this.service.addExerciseObservation(exerciseId, text);
+  }
+
+  private acceptObservation(exerciseId: number, note: ExerciseObservation): void {
+    this.savedObservations.update(items => ({ ...items, [exerciseId]: note }));
+    this.observationDrafts.update(items => ({ ...items, [exerciseId]: '' }));
+    this.observationEditing.update(items => ({ ...items, [exerciseId]: 0 }));
+    this.persist();
+  }
+
+  updateObservation(exerciseId: number, event: Event): void {
+    const text = (event.target as HTMLTextAreaElement).value;
+    this.observationDrafts.update(items => ({ ...items, [exerciseId]: text }));
+    this.observationFeedback.update(items => ({ ...items, [exerciseId]: '' }));
+    this.persist();
+  }
+
+  saveObservation(exerciseId: number): void {
+    const text = (this.observationDrafts()[exerciseId] ?? '').trim();
+    if (!text || text.length > 2000 || this.savingObservation() || this.isSaving()) return;
+    const editingId = this.observationEditing()[exerciseId];
+    this.savingObservation.set(true);
+    this.writeObservation(exerciseId, text).subscribe({
+      next: note => {
+        this.acceptObservation(exerciseId, note);
+        this.observationFeedback.update(items => ({ ...items, [exerciseId]: 'Observación guardada. Tu entrenador puede verla.' }));
+        if (this.currentExercise()?.exerciseId === exerciseId) {
+          this.progressRequestVersion++;
+          this.previous.update(value => value ? { ...value, observations: note.id === editingId ? value.observations : [note, ...(value.observations ?? []).map(item => item.id === editingId ? { ...item, isSuperseded: true } : item)] } : null);
+        }
+        this.savingObservation.set(false);
+        this.persist();
+      },
+      error: () => {
+        this.savingObservation.set(false);
+        this.observationFeedback.update(items => ({ ...items, [exerciseId]: 'No se pudo guardar. Tu texto se conserva; volvé a intentarlo.' }));
+      }
+    });
+  }
+
 
   async startTour(): Promise<void> {
     if (!this.currentStep() || this.tourLoading() || this.tour?.isActive() || this.isSaving()) return;
@@ -47,7 +124,7 @@ export class WorkoutSessionPage {
         { element: '[data-tour="values"]', popover: { title: '4. Registrá lo que hiciste', description: 'Ingresá el peso en kilos y las repeticiones de esta serie. Los valores iniciales son los indicados en tu rutina; podés ajustarlos a lo que realizaste.' } },
         { element: '[data-tour="sets"]', popover: { title: '5. Revisá tus series', description: 'Con “Ver todas las series” podés corregir registros, marcar o desmarcar series y agregar o quitar una serie.' } },
         { element: '[data-tour="continue"]', popover: { title: '6. Completá y seguí', description: 'El botón te indica qué pasa al completar: pasar al siguiente ejercicio, empezar otra vuelta o ciclo, o pasar de bloque. Arriba ves qué serie registrás y qué ejercicio sigue. “Completar entrenamiento” registra la última serie y guarda; “Guardar entrenamiento” envía las series ya completas. Al completar una serie aparece el descanso, que podés omitir.' } },
-        { popover: { title: '¡Ya podés empezar!', description: 'Tu avance se guarda en este navegador mientras entrenás. Al completar todas las series, se envía el entrenamiento y vas a Progreso. En el último ejercicio podés dejar observaciones. Esta guía no modificó tus registros.' } }
+        { popover: { title: '¡Ya podés empezar!', description: 'Tu avance se guarda en este navegador mientras entrenás. Al completar todas las series, se envía el entrenamiento y vas a Progreso. En cada ejercicio podés dejar una observación para tu entrenador; también podés comentar cómo te sentiste al finalizar. Esta guía no modificó tus registros.' } }
       ];
       this.tour = driver({
         steps, showProgress: true, progressText: '{{current}} de {{total}}',
@@ -106,7 +183,7 @@ export class WorkoutSessionPage {
 
   completeAndContinue(): void {
     const step = this.currentStep();
-    if (!step || this.isSaving()) return;
+    if (!step || this.isSaving() || this.savingObservation()) return;
     const action = this.primaryAction();
     if (action.set !== undefined) this.toggleDone(step, action.set);
     if (action.nextIndex === null) this.finish();
@@ -115,10 +192,51 @@ export class WorkoutSessionPage {
  previousExercise():void{if(this.currentIndex()>0){this.currentIndex.update(x=>x-1);this.showAllSets.set(false);this.loadPrevious();}}
   goToStep(index:number):void{this.currentIndex.set(index);this.showAllSets.set(false);this.persist();this.loadPrevious();window.scrollTo({top:0,behavior:'smooth'});}
   startRest(seconds:number):void{if(this.timer)clearInterval(this.timer);this.restRemaining.set(seconds);this.timer=setInterval(()=>{this.restRemaining.update(x=>Math.max(0,x-1));if(this.restRemaining()===0&&this.timer)clearInterval(this.timer);},1000);} skipRest():void{if(this.timer)clearInterval(this.timer);this.restRemaining.set(0);}
-  finish():void{const workout=this.workout();if(!workout||this.isSaving())return;this.isSaving.set(true);this.service.saveWorkoutSession({routineAssignmentId:workout.id,clientRequestId:this.requestId(),trainingDate:new Date().toISOString().slice(0,10),notes:this.sessionNote()||null,exercises:this.steps().map((step,index)=>({exerciseId:step.exercise.exerciseId,routineBlockId:step.blockId,routineExerciseId:step.exercise.id,cycleNumber:step.cycle,sortOrder:index+1,notes:step.exercise.notes??null,sets:this.setNumbers(this.setCount(step)).map(set=>({setNumber:set,reps:this.value(step,set).reps,weight:this.value(step,set).weight,restSeconds:step.exercise.restSeconds??null,notes:this.value(step,set).done?null:'No completada'}))}))}).subscribe({next:()=>{localStorage.removeItem(this.storageKey());localStorage.removeItem(this.countsKey());localStorage.removeItem(`${this.storageKey()}-request`);this.router.navigate(['/progreso'],{queryParams:{completed:1}});},error:()=>{this.feedback.set('No pudimos finalizar. Tu avance sigue guardado.');this.isSaving.set(false);}});}
-  private restore():void{const counts=localStorage.getItem(this.countsKey());if(counts)try{const stored=JSON.parse(counts) as Record<string,number>;const validIds=new Set(this.steps().map(step=>this.stepId(step)));this.setCounts.set(Object.fromEntries(Object.entries(stored).filter(([key])=>validIds.has(key))));}catch{}const saved=localStorage.getItem(this.storageKey());if(saved)try{const value=JSON.parse(saved);const stored=(value.draft??value) as Record<string,SetDraft>;const restored:Record<string,SetDraft>={};for(const step of this.steps())for(const set of this.setNumbers(this.setCount(step))){const key=this.key(step,set);restored[key]=stored[key]??{reps:step.exercise.reps??null,weight:step.exercise.weight??null,done:false};}this.draft.set(restored);this.sessionNote.set(value.note??'');this.currentIndex.set(Math.min(Math.max(0,Number(value.index)||0),Math.max(0,this.steps().length-1)));this.persist();return;}catch{}const initial:Record<string,SetDraft>={};for(const step of this.steps())for(const set of this.setNumbers(this.setCount(step)))initial[this.key(step,set)]={reps:step.exercise.reps??null,weight:step.exercise.weight??null,done:false};this.draft.set(initial);this.persist();}
-  private persist():void{localStorage.setItem(this.storageKey(),JSON.stringify({draft:this.draft(),note:this.sessionNote(),index:this.currentIndex()}));localStorage.setItem(this.countsKey(),JSON.stringify(this.setCounts()));}
+  finish(): void {
+    const workout = this.workout();
+    if (!workout || this.isSaving() || this.savingObservation()) return;
+    const pending = Object.entries(this.observationDrafts()).filter(([id, text]) => text.trim() && this.steps().some(step => step.exercise.exerciseId === Number(id)));
+    if (pending.some(([, text]) => text.length > 2000)) {
+      this.feedback.set('Las observaciones deben tener como máximo 2000 caracteres.');
+      return;
+    }
+    this.isSaving.set(true);
+    from(pending).pipe(
+      concatMap(([id, text]) => this.writeObservation(Number(id), text.trim()).pipe(tap(note => {
+        this.acceptObservation(Number(id), note);
+      }))),
+      toArray(),
+      switchMap(() => this.service.saveWorkoutSession({routineAssignmentId:workout.id,clientRequestId:this.requestId(),trainingDate:new Date().toISOString().slice(0,10),notes:this.sessionNote()||null,exercises:this.steps().map((step,index)=>({exerciseId:step.exercise.exerciseId,routineBlockId:step.blockId,routineExerciseId:step.exercise.id,cycleNumber:step.cycle,sortOrder:index+1,notes:step.exercise.notes??null,sets:this.setNumbers(this.setCount(step)).map(set=>({setNumber:set,reps:this.value(step,set).reps,weight:this.value(step,set).weight,restSeconds:step.exercise.restSeconds??null,notes:this.value(step,set).done?null:'No completada'}))}))}))
+    ).subscribe({
+      next: () => {
+        localStorage.removeItem(this.storageKey());localStorage.removeItem(this.countsKey());localStorage.removeItem(`${this.storageKey()}-request`);
+        this.router.navigate(['/progreso'],{queryParams:{completed:1}});
+      },
+      error: () => {
+        this.feedback.set('No pudimos finalizar. Tu avance y las observaciones pendientes siguen guardados. Volvé a intentarlo.');
+        this.isSaving.set(false);
+      }
+    });
+  }
+  private restore():void{const counts=localStorage.getItem(this.countsKey());if(counts)try{const stored=JSON.parse(counts) as Record<string,number>;const validIds=new Set(this.steps().map(step=>this.stepId(step)));this.setCounts.set(Object.fromEntries(Object.entries(stored).filter(([key])=>validIds.has(key))));}catch{}const saved=localStorage.getItem(this.storageKey());if(saved)try{const value=JSON.parse(saved);const stored=(value.draft??value) as Record<string,SetDraft>;const restored:Record<string,SetDraft>={};for(const step of this.steps())for(const set of this.setNumbers(this.setCount(step))){const key=this.key(step,set);restored[key]=stored[key]??{reps:step.exercise.reps??null,weight:step.exercise.weight??null,done:false};}this.draft.set(restored);this.sessionNote.set(value.note??'');this.observationEditing.set(value.observationEditing??{});const validExerciseIds=new Set(this.steps().map(step=>step.exercise.exerciseId));this.observationDrafts.set(Object.fromEntries(Object.entries(value.observations??{}).filter(([id,text])=>validExerciseIds.has(Number(id))&&typeof text==='string')) as Record<number,string>);this.currentIndex.set(Math.min(Math.max(0,Number(value.index)||0),Math.max(0,this.steps().length-1)));this.persist();return;}catch{}const initial:Record<string,SetDraft>={};for(const step of this.steps())for(const set of this.setNumbers(this.setCount(step)))initial[this.key(step,set)]={reps:step.exercise.reps??null,weight:step.exercise.weight??null,done:false};this.draft.set(initial);this.persist();}
+  private persist():void{localStorage.setItem(this.storageKey(),JSON.stringify({draft:this.draft(),note:this.sessionNote(),index:this.currentIndex(),observations:this.observationDrafts(),observationEditing:this.observationEditing()}));localStorage.setItem(this.countsKey(),JSON.stringify(this.setCounts()));}
   private storageKey():string{return `student-workout-draft-v2-${this.assignmentId}`;} private countsKey():string{return `${this.storageKey()}-sets`;}
   private requestId():string{const key=`${this.storageKey()}-request`,existing=localStorage.getItem(key);if(existing)return existing;const created=crypto.randomUUID();localStorage.setItem(key,created);return created;}
-  private loadPrevious():void{const exercise=this.currentExercise();if(!exercise)return;this.service.getExerciseProgress(exercise.exerciseId).subscribe({next:value=>this.previous.set(value),error:()=>this.previous.set(null)});}
+  private loadPrevious(): void {
+    const exercise = this.currentExercise();
+    const version = ++this.progressRequestVersion;
+    this.previous.set(null);
+    if (!exercise) return;
+    this.service.getExerciseProgress(exercise.exerciseId).subscribe({
+      next: value => {
+        if (version !== this.progressRequestVersion) return;
+        this.previous.set(value);
+        const note = value.observations?.find(item => item.isStudentAuthor && !item.isSuperseded);
+        this.savedObservations.update(items => {
+          const next = { ...items }; if (note) next[exercise.exerciseId] = note; else delete next[exercise.exerciseId]; return next;
+        });
+      },
+      error: () => { if (version === this.progressRequestVersion) this.previous.set(null); }
+    });
+  }
 }

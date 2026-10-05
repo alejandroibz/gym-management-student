@@ -1,3 +1,4 @@
+import { StudentThemeService } from '../core/student-theme.service';
 import { ExerciseMedia } from './exercise-media';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
@@ -17,7 +18,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { AuthService } from '@auth0/auth0-angular';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { AchievementResponse, Exercise, ExerciseProgressHistory, HabitDefinition, HabitLog, RankingResponse, RoutineAssignment, StudentAttendance, StudentContract, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentPayment, StudentPointTransaction, StudentProgressDashboard, StudentTrainingOverview } from './student.models';
+import { AchievementResponse, Exercise, ExerciseProgressHistory, TrackingExercise, HabitDefinition, HabitLog, RankingResponse, RoutineAssignment, StudentAttendance, StudentContract, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentPayment, StudentPointTransaction, StudentProgressDashboard, StudentTrainingOverview } from './student.models';
 import { StudentService } from './student.service';
 import { AvatarCropDialog } from './avatar-crop-dialog/avatar-crop-dialog';
 import { BODY_ZONES, BodyZone, ExerciseBodyMap } from './exercise-body-map';
@@ -61,11 +62,21 @@ export class StudentPage {
   readonly progress = signal<StudentProgressDashboard | null>(null);
   readonly points = signal<StudentPointTransaction[]>([]);
   readonly attendance = signal<StudentAttendance[]>([]);
+  readonly trackingExercises = signal<TrackingExercise[]>([]);
+  readonly showAllTrackingExercises = signal(false);
+  readonly visibleTrackingExercises = computed(() => this.trackingExercises().filter(e => this.showAllTrackingExercises() || e.isAssigned));
+  readonly selectedTrackingExerciseId = signal(0);
+  readonly exerciseObservation = this.formBuilder.nonNullable.control('', [Validators.required, Validators.maxLength(2000)]);
+  readonly savingObservation = signal(false);
+  readonly loadingExerciseProgress = signal(false);
+  readonly observationError = signal('');
+  private progressRequestVersion = 0;
   readonly selectedExerciseProgress = signal<ExerciseProgressHistory | null>(null);
   readonly actionPanel = signal<'weight' | 'goal' | 'habit' | 'schedule' | 'notifications' | null>(null);
   readonly scheduleWorkout = signal<RoutineAssignment | null>(null);
   readonly scheduleDays = signal<number[]>([]);
-  readonly isDark = signal(localStorage.getItem('student-theme') === 'dark');
+  private readonly theme = inject(StudentThemeService);
+  readonly isDark = this.theme.isDark;
   readonly progressPeriod = signal<'week' | 'month' | 'quarter'>('quarter');
 
   readonly dashboard = signal<StudentDashboard | null>(null);
@@ -158,7 +169,6 @@ export class StudentPage {
   });
 
   constructor() {
-    document.body.classList.toggle('student-dark', this.isDark());
     this.route.data.subscribe(data => this.section.set(data['section'] ?? 'home'));
     this.search.valueChanges.subscribe(value => this.searchTerm.set(value ?? ''));
     this.loadAll();
@@ -192,6 +202,10 @@ export class StudentPage {
       }
     });
 
+    this.service.getTrackingExercises().subscribe({
+      next: exercises => this.trackingExercises.set(exercises),
+      error: () => this.observationError.set('No se pudieron cargar los ejercicios. Volvé a cargar la página.')
+    });
     this.service.getPayments().subscribe({ next: payments => this.payments.set(payments) });
     this.service.getHabits().subscribe({ next: habits => this.habits.set(habits) });
     this.service.getHabitDefinitions().subscribe({ next: habits => this.habitDefinitions.set(habits) });
@@ -411,8 +425,63 @@ export class StudentPage {
     });
   }
 
+  setAllTrackingExercises(value: boolean): void {
+    this.showAllTrackingExercises.set(value);
+    if (!this.visibleTrackingExercises().some(e => e.id === this.selectedTrackingExerciseId())) {
+      this.progressRequestVersion++;
+      this.selectedTrackingExerciseId.set(0);
+      this.selectedExerciseProgress.set(null);
+      this.exerciseObservation.reset('');
+      this.loadingExerciseProgress.set(false);
+      this.observationError.set('');
+    }
+  }
+
+  currentObservations(history: ExerciseProgressHistory) {
+    return (history.observations ?? []).filter(note => !note.isSuperseded);
+  }
+
   selectExerciseProgress(exerciseId: number): void {
-    this.service.getExerciseProgress(exerciseId).subscribe({ next: progress => this.selectedExerciseProgress.set(progress), error: () => this.toast('Todavia no hay registros para ese ejercicio.') });
+    const version = ++this.progressRequestVersion;
+    this.selectedTrackingExerciseId.set(exerciseId);
+    this.selectedExerciseProgress.set(null);
+    this.exerciseObservation.reset('');
+    this.observationError.set('');
+    this.loadingExerciseProgress.set(true);
+    this.service.getExerciseProgress(exerciseId).subscribe({
+      next: progress => {
+        if (version !== this.progressRequestVersion) return;
+        this.selectedExerciseProgress.set(progress);
+        this.loadingExerciseProgress.set(false);
+      },
+      error: () => {
+        if (version !== this.progressRequestVersion) return;
+        this.loadingExerciseProgress.set(false);
+        this.observationError.set('No se pudo cargar el seguimiento. Elegí el ejercicio nuevamente para reintentar.');
+      }
+    });
+  }
+
+  saveExerciseObservation(): void {
+    const history = this.selectedExerciseProgress();
+    const text = this.exerciseObservation.value.trim();
+    if (!history || !text || this.exerciseObservation.invalid || this.savingObservation()) return;
+    this.savingObservation.set(true);
+    this.observationError.set('');
+    this.service.addExerciseObservation(history.exerciseId, text).subscribe({
+      next: observation => {
+        this.savingObservation.set(false);
+        if (this.selectedExerciseProgress()?.exerciseId !== history.exerciseId) return;
+        this.selectedExerciseProgress.update(current => current ? { ...current, observations: [observation, ...(current.observations ?? [])] } : null);
+        this.exerciseObservation.reset('');
+        this.toast('Observación guardada. Tu entrenador puede verla.');
+      },
+      error: () => {
+        this.savingObservation.set(false);
+        if (this.selectedExerciseProgress()?.exerciseId === history.exerciseId)
+          this.observationError.set('No se pudo guardar la observación. Tu texto se conserva; volvé a intentarlo.');
+      }
+    });
   }
 
   openSchedule(workout: RoutineAssignment): void {
@@ -451,9 +520,7 @@ export class StudentPage {
   }
 
   toggleTheme(): void {
-    this.isDark.update(value => !value);
-    document.body.classList.toggle('student-dark', this.isDark());
-    localStorage.setItem('student-theme', this.isDark() ? 'dark' : 'light');
+    this.theme.toggle();
   }
 
   startProfileEditing(): void {

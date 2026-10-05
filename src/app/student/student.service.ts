@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AchievementResponse, Exercise, ExerciseProgressHistory, HabitDefinition, HabitLog, PublicContractVerification, RankingResponse, RoutineAssignment, StudentAttendance, StudentBodyMeasurement, StudentContract, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentNotification, StudentPayment, StudentPointTransaction, StudentProfile, StudentProgressDashboard, StudentTrainingOverview, WorkoutSessionPayload } from './student.models';
+import { AchievementResponse, Exercise, ExerciseProgressHistory, ExerciseObservation, TrackingExercise, HabitDefinition, HabitLog, PublicContractVerification, RankingResponse, RoutineAssignment, StudentAttendance, StudentBodyMeasurement, StudentContract, StudentDashboard, StudentGoal, StudentHabitEntry, StudentHome, StudentNotification, StudentPayment, StudentPointTransaction, StudentProfile, StudentProgressDashboard, StudentTrainingOverview, WorkoutSessionPayload } from './student.models';
 
 @Injectable({ providedIn: 'root' })
 export class StudentService {
@@ -84,6 +84,20 @@ export class StudentService {
 
   markNotificationRead(id: number): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/Student/notifications/${id}/read`, {});
+  }
+
+  getTrackingExercises(clientId?: number): Observable<TrackingExercise[]> {
+    let params = new HttpParams();
+    if (clientId) params = params.set('clientId', clientId);
+    return this.http.get<TrackingExercise[]>(`${this.apiUrl}/Training/tracking-exercises`, { params });
+  }
+
+  addExerciseObservation(exerciseId: number, text: string, clientId?: number): Observable<ExerciseObservation> {
+    return this.http.post<ExerciseObservation>(`${this.apiUrl}/Training/progress/${exerciseId}/observations`, { text, clientId });
+  }
+
+  editExerciseObservation(exerciseId: number, observationId: number, text: string, clientId?: number): Observable<ExerciseObservation> {
+    return this.http.put<ExerciseObservation>(`${this.apiUrl}/Training/progress/${exerciseId}/observations/${observationId}`, { text, clientId });
   }
 
   getExerciseProgress(exerciseId: number): Observable<ExerciseProgressHistory> {

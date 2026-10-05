@@ -21,3 +21,40 @@
 }
 .exercise-hero { grid-template-columns: minmax(0, 1fr); }
 .exercise-hero app-exercise-media { width: 100%; }
+
+.exercise-observation { margin: 1rem; padding: 1rem; background: var(--student-surface); border: 1px solid var(--student-border); border-radius: 10px; display: grid; gap: .65rem; min-width: 0; color: var(--student-text); }
+.exercise-observation h2 { font-size: 1.1rem; margin: 0; overflow-wrap: anywhere; }
+.exercise-observation > p { margin: 0; line-height: 1.5; }
+.exercise-observation label { font-weight: 700; }
+.exercise-observation textarea { box-sizing: border-box; width: 100%; min-width: 0; resize: vertical; border: 1px solid var(--student-border); border-radius: 8px; background: var(--student-surface-muted); color: var(--student-text); padding: .75rem; font: inherit; font-size: 1rem; }
+.exercise-observation textarea:focus-visible { outline: 2px solid var(--student-accent); outline-offset: 2px; }
+.exercise-observation > small { text-align: right; }
+.exercise-observation > button { justify-self: start; }
+.exercise-observation article { border-top: 1px solid var(--student-border); padding-top: .8rem; overflow-wrap: anywhere; }
+.exercise-observation article small { display: block; margin-top: .25rem; }
+.exercise-observation article p { white-space: pre-wrap; margin-bottom: 0; }
+
+.observation-disclosure { margin: .75rem 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; color: var(--student-text); }
+.observation-disclosure p { margin: 0; font-size: .9rem; line-height: 1.5; flex: 1 1 280px; }
+.observation-disclosure button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding-inline: 1rem;
+  border: 1px solid color-mix(in srgb, var(--student-accent) 45%, var(--student-border));
+  background: var(--student-surface);
+  color: var(--student-accent);
+  box-shadow: 0 2px 5px rgb(0 0 0 / 10%);
+  font-weight: 700;
+}
+.observation-disclosure button:focus-visible { outline: 2px solid var(--student-accent); outline-offset: 3px; }
+@media (hover: hover) {
+  .observation-disclosure button:hover { background: var(--student-accent-soft); }
+}
+.observation-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.previous-observation p { margin: 0; }
+
+.session-page > header { grid-template-columns: 44px minmax(0, 1fr) auto; gap: .4rem; }
+.session-page > header .session-heading { min-width: 0; }
+.session-heading > span { overflow-wrap: anywhere; }
+.session-page > header .session-header-actions { display: flex; align-items: center; gap: .15rem; }
+.session-header-actions .session-map-toggle { min-width: 44px; min-height: 44px; }

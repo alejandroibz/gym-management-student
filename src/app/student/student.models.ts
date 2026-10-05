@@ -248,7 +248,25 @@ export interface StudentAttendance {
   distanceMeters?: number | null;
 }
 
+export interface ExerciseObservation {
+  originalObservationId?: number | null;
+  isSuperseded?: boolean;
+  editedByName?: string | null;
+  id: number;
+  authorName: string;
+  isStudentAuthor: boolean;
+  createdAt: string;
+  text: string;
+}
+
+export interface TrackingExercise {
+  id: number;
+  name: string;
+  isAssigned: boolean;
+}
+
 export interface ExerciseProgressHistory {
+  observations: ExerciseObservation[];
   clientId: number;
   exerciseId: number;
   exerciseName: string;

@@ -89,7 +89,38 @@
 
         <section class="content-section"><div class="section-title"><div><span class="eyebrow">METAS PERSONALES</span><h2>Mis objetivos</h2></div><button mat-flat-button type="button" (click)="actionPanel.set('goal')"><mat-icon>add</mat-icon>Nuevo</button></div><div class="goal-grid">@for (goal of data.goals; track goal.id) { <article class="goal-card"><div><span class="goal-icon"><mat-icon>{{ goal.type === 'BodyWeight' ? 'monitor_weight' : goal.type === 'ExerciseWeight' ? 'fitness_center' : 'flag' }}</mat-icon></span><span class="soft-chip">{{ goal.status === 'Completed' ? 'COMPLETADO' : 'EN CURSO' }}</span></div><h3>{{ goal.title }}</h3><p>{{ goal.currentValue }} / {{ goal.targetValue }} {{ goal.unit }}</p><mat-progress-bar mode="determinate" [value]="goal.progressPercent" /><footer><span>{{ goal.progressPercent }}%</span><button mat-button type="button" (click)="updateGoal(goal)">Actualizar</button></footer></article> } @empty { <div class="empty-inline"><mat-icon>flag</mat-icon><span>Creá una meta concreta para seguir tu avance.</span></div> }</div></section>
 
-        <section class="progress-layout"><article class="data-panel"><div class="section-title"><h2>Evolución por ejercicio</h2></div><mat-form-field appearance="outline"><mat-label>Elegir ejercicio</mat-label><mat-select (selectionChange)="selectExerciseProgress($event.value)">@for (exercise of exercises(); track exercise.id) { <mat-option [value]="exercise.id">{{ exercise.name }}</mat-option> }</mat-select></mat-form-field>@if (selectedExerciseProgress(); as history) { <div class="exercise-highlight"><mat-icon>local_fire_department</mat-icon><div><strong>{{ history.bestWeight || 0 }} kg</strong><span>Mejor peso</span></div><div><strong>{{ history.totalVolume | number:'1.0-0' }} kg</strong><span>Volumen</span></div></div>@if ((history.weightDelta || 0) > 0) { <p class="positive-message"><mat-icon>trending_up</mat-icon>Subiste {{ history.weightDelta }} kg respecto de la sesión anterior.</p> }}</article>
+        <section class="progress-layout"><article class="data-panel exercise-tracking">
+          <div class="section-title"><h2>Seguimiento por ejercicio</h2></div>
+          <mat-checkbox [checked]="showAllTrackingExercises()" (change)="setAllTrackingExercises($event.checked)">Ver todos los ejercicios</mat-checkbox>
+          <mat-form-field appearance="outline"><mat-label>Elegir ejercicio</mat-label>
+            <mat-select [value]="selectedTrackingExerciseId()" (selectionChange)="selectExerciseProgress($event.value)">
+              @for (exercise of visibleTrackingExercises(); track exercise.id) { <mat-option [value]="exercise.id">{{ exercise.name }}{{ exercise.isAssigned ? ' · Asignado' : '' }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          @if (!showAllTrackingExercises() && !visibleTrackingExercises().length) { <p class="muted">Todavía no tenés ejercicios asignados vigentes. Activá «Ver todos los ejercicios» para consultar tu historial o agregar una observación.</p> }
+          @if (observationError()) { <p class="observation-error" role="alert">{{ observationError() }}</p> }
+          @if (loadingExerciseProgress()) { <p role="status">Cargando seguimiento del ejercicio...</p> }
+          @if (selectedExerciseProgress(); as history) {
+            @if (history.points.length) {
+              <div class="exercise-highlight"><mat-icon>local_fire_department</mat-icon><div><strong>{{ history.bestWeight || 0 }} kg</strong><span>Mejor peso</span></div><div><strong>{{ history.totalVolume | number:'1.0-0' }} kg</strong><span>Volumen</span></div></div>
+              @if ((history.weightDelta || 0) > 0) { <p class="positive-message"><mat-icon>trending_up</mat-icon>Subiste {{ history.weightDelta }} kg respecto de la sesión anterior.</p> }
+            } @else { <p class="muted">Todavía no tenés sesiones registradas para este ejercicio. Ya podés dejar una observación.</p> }
+            <section class="exercise-observations" aria-label="Observaciones del ejercicio">
+              <h3>Observaciones · {{ history.exerciseName }}</h3>
+              <p>Tu entrenador puede leer tus observaciones y agregar las suyas.</p>
+              <mat-form-field appearance="outline"><mat-label>Tu observación</mat-label>
+                <textarea matInput [formControl]="exerciseObservation" rows="3" maxlength="2000" placeholder="Por ejemplo: con 40 kg me molestó el hombro."></textarea>
+                <mat-hint align="end">{{ exerciseObservation.value.length }}/2000</mat-hint>
+              </mat-form-field>
+              <button mat-flat-button type="button" [disabled]="savingObservation() || exerciseObservation.invalid || !exerciseObservation.value.trim()" (click)="saveExerciseObservation()">{{ savingObservation() ? 'Guardando...' : 'Agregar observación' }}</button>
+              <div class="observation-list">
+                @for (note of currentObservations(history); track note.id) {
+                  <article class="observation-entry"><div><strong>{{ note.isStudentAuthor ? 'Alumno' : 'Entrenador / equipo' }} · {{ note.authorName }}</strong><time>{{ note.createdAt | date:'dd/MM/yyyy HH:mm' }}</time></div><p>{{ note.text }}</p></article>
+                } @empty { <p>Todavía no hay observaciones para este ejercicio.</p> }
+              </div>
+            </section>
+          }
+        </article>
           <article class="data-panel"><div class="section-title"><h2>Asistencias recientes</h2><button mat-stroked-button type="button" (click)="manualCheckIn()">Registrar</button></div>@for (item of attendance().slice(0, 6); track item.id) { <div class="history-row"><span class="status-dot" [class.verified]="item.isVerified"></span><span><strong>{{ item.date | date:'EEEE d MMMM' }}</strong><small>{{ item.isVerified ? 'Verificada en el gimnasio' : 'Registro manual' }}</small></span><mat-icon>{{ item.isVerified ? 'verified' : 'person' }}</mat-icon></div> } @empty { <p class="muted">Todavía no registraste asistencias.</p> }</article></section>
       }
     }

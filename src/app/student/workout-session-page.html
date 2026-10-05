@@ -1,5 +1,12 @@
 <main class="session-page">
-  <header><a mat-icon-button routerLink="/entrenar" aria-label="Salir"><mat-icon>close</mat-icon></a><div><span>{{ workout()?.name || 'Workout' }}</span><mat-progress-bar mode="determinate" [value]="progress()" /><small>{{ completedSets() }} de {{ totalSets() }} series</small></div><button class="session-map-toggle" type="button" (click)="showOutline.update(value=>!value)" [attr.aria-expanded]="showOutline()"><mat-icon>{{showOutline()?'expand_less':'format_list_bulleted'}}</mat-icon><small>{{ currentIndex()+1 }}/{{ steps().length }}</small></button></header>
+  <header>
+    <a mat-icon-button routerLink="/entrenar" aria-label="Volver a entrenamientos"><mat-icon>arrow_back</mat-icon></a>
+    <div class="session-heading"><span>{{ workout()?.name || 'Workout' }}</span><mat-progress-bar mode="determinate" [value]="progress()" /><small>{{ completedSets() }} de {{ totalSets() }} series</small></div>
+    <div class="session-header-actions">
+      <button mat-icon-button type="button" (click)="toggleTheme()" [attr.aria-label]="isDark() ? 'Activar modo claro' : 'Activar modo oscuro'"><mat-icon>{{ isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon></button>
+      <button class="session-map-toggle" type="button" (click)="showOutline.update(value=>!value)" [attr.aria-expanded]="showOutline()" [attr.aria-label]="showOutline() ? 'Ocultar mapa del entrenamiento' : 'Mostrar mapa del entrenamiento'"><mat-icon>{{showOutline()?'expand_less':'format_list_bulleted'}}</mat-icon><small>{{ currentIndex()+1 }}/{{ steps().length }}</small></button>
+    </div>
+  </header>
   @if (currentStep()) {
     <section class="session-help" aria-label="Ayuda para entrenar">
       <span>¿Primera vez registrando tu entrenamiento?</span>
@@ -45,6 +52,33 @@
           <button class="add-set-inline" mat-button type="button" (click)="addSet(step)"><mat-icon>add</mat-icon>Agregar serie</button>
         }
       </section>
+      <div class="observation-disclosure">
+        <p>¿Querés dejar alguna observación sobre cómo te sentiste con este ejercicio?</p>
+        <button mat-stroked-button type="button" (click)="toggleObservation(exercise.exerciseId)" [attr.aria-expanded]="!!observationOpen()[exercise.exerciseId]" [attr.aria-controls]="'observation-panel-' + exercise.exerciseId">{{ observationOpen()[exercise.exerciseId] ? 'Ocultar observación' : latestStudentObservation() ? 'Ver observación previa' : (observationDrafts()[exercise.exerciseId] || '').trim() ? 'Continuar observación' : 'Dejar observación' }}</button>
+      </div>
+      @if (observationOpen()[exercise.exerciseId]) {
+        <section class="exercise-observation" [id]="'observation-panel-' + exercise.exerciseId" aria-label="Observación del ejercicio actual">
+          <h2>Observación · {{ exercise.exerciseName }}</h2>
+          @if (latestStudentObservation(); as note) {
+            <article class="previous-observation"><small>{{ note.createdAt | date:'dd/MM/yyyy HH:mm' }}</small><p>{{ note.text }}</p></article>
+            @if (!observationEditing()[exercise.exerciseId] && !(observationDrafts()[exercise.exerciseId] || '').trim()) {
+              <p>¿Querés modificar tu observación?</p>
+              <button mat-stroked-button type="button" (click)="editPreviousObservation(exercise.exerciseId)" [disabled]="savingObservation() || isSaving()">Modificar observación</button>
+            }
+          }
+          @if (!latestStudentObservation() || observationEditing()[exercise.exerciseId] || (observationDrafts()[exercise.exerciseId] || '').trim()) {
+            <label [for]="'exercise-observation-' + exercise.exerciseId">{{ observationEditing()[exercise.exerciseId] ? 'Modificar tu observación' : 'Tu observación' }}</label>
+            <textarea [id]="'exercise-observation-' + exercise.exerciseId" rows="3" maxlength="2000" [value]="observationDrafts()[exercise.exerciseId] || ''" (input)="updateObservation(exercise.exerciseId, $event)" [readOnly]="savingObservation() || isSaving()" placeholder="Por ejemplo: con 40 kg me molestó el hombro."></textarea>
+            <small>{{ (observationDrafts()[exercise.exerciseId] || '').length }}/2000</small>
+            <p>Podés guardarla ahora; si queda pendiente, se guarda al finalizar el entrenamiento.</p>
+            <div class="observation-actions">
+              <button mat-stroked-button type="button" (click)="saveObservation(exercise.exerciseId)" [disabled]="savingObservation() || isSaving() || !(observationDrafts()[exercise.exerciseId] || '').trim()">{{ savingObservation() ? 'Guardando...' : 'Guardar observación' }}</button>
+              @if (observationEditing()[exercise.exerciseId]) { <button mat-button type="button" (click)="cancelObservationEdit(exercise.exerciseId)" [disabled]="savingObservation() || isSaving()">Cancelar modificación</button> }
+            </div>
+          }
+          @if (observationFeedback()[exercise.exerciseId]) { <p role="status">{{ observationFeedback()[exercise.exerciseId] }}</p> }
+        </section>
+      }
     }
     @if(restRemaining()>0){<aside class="rest-timer"><span>DESCANSO</span><strong>{{ restRemaining() }}s</strong><button mat-button type="button" (click)="skipRest()">Omitir</button></aside>}
     @if(currentIndex()===steps().length-1 || primaryAction().nextIndex === null){<label class="session-note"><span>¿Cómo te sentiste?</span><textarea rows="3" [value]="sessionNote()" (input)="sessionNote.set($any($event.target).value)" placeholder="Dolor, dificultad u observaciones para tu profesor o kinesiólogo"></textarea></label>}
@@ -55,7 +89,7 @@
       </div>
       <div class="session-action-buttons">
         <button mat-stroked-button type="button" (click)="previousExercise()" [disabled]="currentIndex()===0 || isSaving()"><mat-icon>arrow_back</mat-icon>Anterior</button>
-        <button mat-flat-button type="button" (click)="completeAndContinue()" [disabled]="isSaving()" aria-describedby="session-action-hint">
+        <button mat-flat-button type="button" (click)="completeAndContinue()" [disabled]="isSaving() || savingObservation()" aria-describedby="session-action-hint">
           <mat-icon>{{ primaryAction().nextIndex === null ? 'flag' : 'check' }}</mat-icon>
           {{ isSaving() ? 'Guardando…' : primaryAction().label }}
         </button>
