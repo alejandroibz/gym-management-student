@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+ <title id="title">Referente · Diamante</title><desc id="desc">Insignia de LifetimeAttendance, nivel Diamante. Colección Simbiosis, propuesta v1.</desc>
+ <defs><linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e5fcff"/><stop offset=".33" stop-color="#7ecbdc"/><stop offset=".5" stop-color="#e5fcff"/><stop offset=".72" stop-color="#7ecbdc"/><stop offset="1" stop-color="#3e7b9e"/></linearGradient>
+ <linearGradient id="face" x1="0" y1="0" x2=".65" y2="1"><stop stop-color="#30333b"/><stop offset="1" stop-color="#111217"/></linearGradient>
+ <linearGradient id="emblem" x1="0" y1="0" x2=".4" y2="1"><stop stop-color="#e5fcff"/><stop offset="1" stop-color="#7ecbdc"/></linearGradient>
+ <style>.cut{fill:none;stroke:#1b1d24;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}</style></defs>
+ <g transform=""><path d="m137 157-30-17 8 94 29 26z" fill="url(#metal)" stroke="#3e7b9e" stroke-width="3"/><path d="m110 179-37-22 17 111 52 40-5-29-26-20z" fill="url(#metal)" stroke="#3e7b9e" stroke-width="3"/></g><g transform="translate(512 0) scale(-1 1)"><path d="m137 157-30-17 8 94 29 26z" fill="url(#metal)" stroke="#3e7b9e" stroke-width="3"/><path d="m110 179-37-22 17 111 52 40-5-29-26-20z" fill="url(#metal)" stroke="#3e7b9e" stroke-width="3"/></g><path d="m256 36 32 27-32 28-32-28z" fill="#7ecbdc" stroke="#e5fcff" stroke-width="3"/><path d="m224 63h64m-32-27-12 27 12 28 12-28z" fill="none" stroke="#3e7b9e" stroke-width="2"/><path d="M256 76 382 122 370 285Q355 359 256 411Q157 359 142 285L130 122Z" transform="translate(0 7)" fill="#08090c" fill-opacity=".35"/>
+ <path d="M256 76 382 122 370 285Q355 359 256 411Q157 359 142 285L130 122Z" fill="url(#metal)" stroke="#3e7b9e" stroke-width="4"/><path d="M256 98 360 137 349 281Q337 340 256 385Q175 340 163 281L152 137Z" fill="url(#face)" stroke="#e5fcff" stroke-opacity=".65" stroke-width="2"/><path d="M256 112 347 146 337 278Q327 328 256 370Q185 328 175 278L165 146Z" fill="none" stroke="#7ecbdc" stroke-width="2" opacity=".5"/><path d="m229.0 356 5 6-5 6-5-6z" fill="#e5fcff"/><path d="m247.0 356 5 6-5 6-5-6z" fill="#e5fcff"/><path d="m265.0 356 5 6-5 6-5-6z" fill="#e5fcff"/><path d="m283.0 356 5 6-5 6-5-6z" fill="#e5fcff"/><path d="m246 117 10 7 10-7-10-7z" fill="#c1121f"/>
+ <g fill="url(#emblem)"><path d="m256 157 65 34v15H191v-15zM199 220h24v66h-24zm45 0h24v66h-24zm45 0h24v66h-24zM185 300h142v17H185zM176 329h160v12H176z"/>
+ <path class="cut" d="M225 192h62"/>
+ <path d="m256 126 8 14-8 14-8-14z" fill="#c1121f"/></g>
+ <path d="m204 403 52 27 52-27-2 29-50 27-50-27z" fill="url(#metal)" stroke="#3e7b9e" stroke-width="3"/>
+ <text x="256" y="441" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="21" fill="#15171c">IV</text>
+ </svg>

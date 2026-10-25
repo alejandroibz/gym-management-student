@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+ <title id="title">Presente · Bronce</title><desc id="desc">Insignia de Attendance, nivel Bronce. Colección Simbiosis, propuesta v1.</desc>
+ <defs><linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2c8a2"/><stop offset=".33" stop-color="#bc7b4e"/><stop offset=".5" stop-color="#f2c8a2"/><stop offset=".72" stop-color="#bc7b4e"/><stop offset="1" stop-color="#734426"/></linearGradient>
+ <linearGradient id="face" x1="0" y1="0" x2=".65" y2="1"><stop stop-color="#30333b"/><stop offset="1" stop-color="#111217"/></linearGradient>
+ <linearGradient id="emblem" x1="0" y1="0" x2=".4" y2="1"><stop stop-color="#f2c8a2"/><stop offset="1" stop-color="#bc7b4e"/></linearGradient>
+ <style>.cut{fill:none;stroke:#1b1d24;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}</style></defs>
+ <path d="M256 76 382 122 370 285Q355 359 256 411Q157 359 142 285L130 122Z" transform="translate(0 7)" fill="#08090c" fill-opacity=".35"/>
+ <path d="M256 76 382 122 370 285Q355 359 256 411Q157 359 142 285L130 122Z" fill="url(#metal)" stroke="#734426" stroke-width="4"/><path d="M256 98 360 137 349 281Q337 340 256 385Q175 340 163 281L152 137Z" fill="url(#face)" stroke="#f2c8a2" stroke-opacity=".65" stroke-width="2"/><path d="m256.0 356 5 6-5 6-5-6z" fill="#f2c8a2"/><path d="m246 117 10 7 10-7-10-7z" fill="#c1121f"/>
+ <g fill="url(#emblem)"><rect x="178" y="177" width="156" height="141" rx="17"/><path d="M202 153h17v40h-17zm91 0h17v40h-17z"/>
+ <path class="cut" d="M190 214h132m-106 48 26 26 53-51"/><path d="M313 294h29v28h-29z" fill="#c1121f"/></g>
+ <path d="m204 403 52 27 52-27-2 29-50 27-50-27z" fill="url(#metal)" stroke="#734426" stroke-width="3"/>
+ <text x="256" y="441" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="21" fill="#15171c">I</text>
+ </svg>

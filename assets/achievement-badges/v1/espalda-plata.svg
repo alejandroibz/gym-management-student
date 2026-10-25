@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+ <title id="title">Espalda firme · Plata</title><desc id="desc">Insignia de Back, nivel Plata. Colección Simbiosis, propuesta v1.</desc>
+ <defs><linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1f6fa"/><stop offset=".33" stop-color="#aebdc9"/><stop offset=".5" stop-color="#f1f6fa"/><stop offset=".72" stop-color="#aebdc9"/><stop offset="1" stop-color="#647684"/></linearGradient>
+ <linearGradient id="face" x1="0" y1="0" x2=".65" y2="1"><stop stop-color="#30333b"/><stop offset="1" stop-color="#111217"/></linearGradient>
+ <linearGradient id="emblem" x1="0" y1="0" x2=".4" y2="1"><stop stop-color="#f1f6fa"/><stop offset="1" stop-color="#aebdc9"/></linearGradient>
+ <style>.cut{fill:none;stroke:#1b1d24;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}</style></defs>
+ <path d="M256 76 382 122 370 285Q355 359 256 411Q157 359 142 285L130 122Z" transform="translate(0 7)" fill="#08090c" fill-opacity=".35"/>
+ <path d="M256 76 382 122 370 285Q355 359 256 411Q157 359 142 285L130 122Z" fill="url(#metal)" stroke="#647684" stroke-width="4"/><path d="M256 98 360 137 349 281Q337 340 256 385Q175 340 163 281L152 137Z" fill="url(#face)" stroke="#f1f6fa" stroke-opacity=".65" stroke-width="2"/><path d="M256 112 347 146 337 278Q327 328 256 370Q185 328 175 278L165 146Z" fill="none" stroke="#aebdc9" stroke-width="2" opacity=".5"/><path d="m247.0 356 5 6-5 6-5-6z" fill="#f1f6fa"/><path d="m265.0 356 5 6-5 6-5-6z" fill="#f1f6fa"/><path d="m246 117 10 7 10-7-10-7z" fill="#c1121f"/>
+ <g fill="url(#emblem)"><path d="m225 159-29 16-29 26 17 47 27-13 11 77h68l11-77 27 13 17-47-29-26-29-16-6 23h-50z"/>
+ <path class="cut" d="M256 190v106m-57-89 38 20-14 45m90-65-38 20 14 45m-65 13 22-15m42 15-22-15"/></g>
+ <path d="m204 403 52 27 52-27-2 29-50 27-50-27z" fill="url(#metal)" stroke="#647684" stroke-width="3"/>
+ <text x="256" y="441" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="21" fill="#15171c">II</text>
+ </svg>

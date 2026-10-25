@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+ <title id="title">Pecho de acero · Oro</title><desc id="desc">Insignia de Chest, nivel Oro. Colección Simbiosis, propuesta v1.</desc>
+ <defs><linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0b4"/><stop offset=".33" stop-color="#dfb550"/><stop offset=".5" stop-color="#fff0b4"/><stop offset=".72" stop-color="#dfb550"/><stop offset="1" stop-color="#977026"/></linearGradient>
+ <linearGradient id="face" x1="0" y1="0" x2=".65" y2="1"><stop stop-color="#30333b"/><stop offset="1" stop-color="#111217"/></linearGradient>
+ <linearGradient id="emblem" x1="0" y1="0" x2=".4" y2="1"><stop stop-color="#fff0b4"/><stop offset="1" stop-color="#dfb550"/></linearGradient>
+ <style>.cut{fill:none;stroke:#1b1d24;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}</style></defs>
+ <g transform=""><path d="m137 157-30-17 8 94 29 26z" fill="url(#metal)" stroke="#977026" stroke-width="3"/></g><g transform="translate(512 0) scale(-1 1)"><path d="m137 157-30-17 8 94 29 26z" fill="url(#metal)" stroke="#977026" stroke-width="3"/></g><path d="M256 76 382 122 370 285Q355 359 256 411Q157 359 142 285L130 122Z" transform="translate(0 7)" fill="#08090c" fill-opacity=".35"/>
+ <path d="M256 76 382 122 370 285Q355 359 256 411Q157 359 142 285L130 122Z" fill="url(#metal)" stroke="#977026" stroke-width="4"/><path d="M256 98 360 137 349 281Q337 340 256 385Q175 340 163 281L152 137Z" fill="url(#face)" stroke="#fff0b4" stroke-opacity=".65" stroke-width="2"/><path d="M256 112 347 146 337 278Q327 328 256 370Q185 328 175 278L165 146Z" fill="none" stroke="#dfb550" stroke-width="2" opacity=".5"/><path d="m238.0 356 5 6-5 6-5-6z" fill="#fff0b4"/><path d="m256.0 356 5 6-5 6-5-6z" fill="#fff0b4"/><path d="m274.0 356 5 6-5 6-5-6z" fill="#fff0b4"/><path d="m246 117 10 7 10-7-10-7z" fill="#c1121f"/>
+ <g fill="url(#emblem)"><path d="m223 165-34 16-24 27 19 43 24-12 15 72h66l15-72 24 12 19-43-24-27-34-16-13 16h-40z"/>
+ <path class="cut" d="M256 191v112m-53-100 40 5 3 34-29 7-20-18m112-28-40 5-3 34 29 7 20-18m-82 48h10m26 0h10m-46 21h10m26 0h10"/></g>
+ <path d="m204 403 52 27 52-27-2 29-50 27-50-27z" fill="url(#metal)" stroke="#977026" stroke-width="3"/>
+ <text x="256" y="441" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="21" fill="#15171c">III</text>
+ </svg>
